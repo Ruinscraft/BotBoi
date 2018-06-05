@@ -3,19 +3,19 @@ package com.ruinscraft.botboi.server;
 public class BotBoiServer {
 
 	private String discordToken;
-	private String salt;
+	private String key;
 	
-	public BotBoiServer(String discordToken, String salt) {
+	public BotBoiServer(String discordToken, String key) {
 		this.discordToken = discordToken;
-		this.salt = salt;
+		this.key = key;
 	}
 	
 	public String getDiscordToken() {
 		return discordToken;
 	}
 	
-	public String getSalt() {
-		return salt;
+	public String getKey() {
+		return key;
 	}
 	
 }

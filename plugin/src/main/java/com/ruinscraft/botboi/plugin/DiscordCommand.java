@@ -7,10 +7,10 @@ import org.bukkit.entity.Player;
 
 public class DiscordCommand implements CommandExecutor {
 
-	private String salt;
+	private String key;
 	
-	public DiscordCommand(String salt) {
-		this.salt = salt;
+	public DiscordCommand(String key) {
+		this.key = key;
 	}
 	
 	@Override
@@ -23,7 +23,7 @@ public class DiscordCommand implements CommandExecutor {
 		Player player = (Player) sender;
 		
 		player.sendMessage("Join the discord with: discord.gg/something");
-		player.sendMessage("Your key is: " + salt);
+		player.sendMessage("Your key is: " + key);
 		
 		return true;
 	}

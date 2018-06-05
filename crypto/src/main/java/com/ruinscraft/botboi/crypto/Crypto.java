@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.InvalidParameterException;
+import java.util.UUID;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -52,6 +53,33 @@ public class Crypto {
 		}
 		
 		return oneTimePad(false, text, key);
+	}
+	
+	public static String encrypt(String key, UUID uuid) {
+		String uuidSub = uuid.toString().substring(0, 5);
+		
+		uuidSub += "dc";
+		
+		String uuidSubRepl = "";
+		
+		for (int i = 0; i < uuidSub.length(); i++) {
+			
+			char c = uuidSub.charAt(i);
+			
+			if (Character.isDigit(c)) {
+				int charVal = Character.getNumericValue(c);
+				if (charVal < 9) {
+					uuidSubRepl += charVal + 1;
+				} else {
+					uuidSubRepl += charVal - 1;
+				}
+			} else {
+				uuidSubRepl += c;
+			}
+			
+		}
+		
+		return encrypt(key, uuidSubRepl);
 	}
 
 }
