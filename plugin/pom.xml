@@ -10,6 +10,8 @@
 
 	<artifactId>plugin</artifactId>
 
+	<name>BotBoi</name>
+
 	<properties>
 		<mainClass>com.ruinscraft.botboi.plugin.BotBoiPlugin</mainClass>
 	</properties>
