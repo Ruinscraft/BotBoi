@@ -1,0 +1,6 @@
+main: ${mainClass}
+name: ${name}
+version: ${version}
+authors: [royalkingkb]
+commands:
+  discord:
