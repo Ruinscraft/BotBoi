@@ -15,7 +15,7 @@ public class Bootstrap {
 		String key = args[1];
 		
 		// start the server
-		new BotBoiServer(discordToken, key);
+		new BotBoiServer(discordToken, key).run();
 	}
 	
 }

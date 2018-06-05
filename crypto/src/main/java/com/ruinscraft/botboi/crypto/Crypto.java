@@ -58,7 +58,7 @@ public class Crypto {
 	public static String encrypt(String key, UUID uuid) {
 		String uuidSub = uuid.toString().substring(0, 5);
 		
-		uuidSub += "dc";
+		uuidSub = "d" + uuidSub + "c";
 		
 		String uuidSubRepl = "";
 		
