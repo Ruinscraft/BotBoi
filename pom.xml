@@ -17,6 +17,7 @@
 		<module>plugin</module>
 		<module>server</module>
 		<module>common</module>
+		<module>crypto</module>
 	</modules>
 	
 </project>
