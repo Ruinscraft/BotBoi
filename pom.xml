@@ -17,7 +17,7 @@
 	<modules>
 		<module>plugin</module>
 		<module>server</module>
-		<module>crypto</module>
+		<module>storage</module>
 	</modules>
 
 	<build>

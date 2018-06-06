@@ -1,15 +1,20 @@
 package com.ruinscraft.botboi.server;
 
-import javax.security.auth.login.LoginException;
+import java.util.Properties;
 
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
+import net.dv8tion.jda.core.OnlineStatus;
+import net.dv8tion.jda.core.entities.Game;
+import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
-public class BotBoiServer implements Runnable {
+public class BotBoiServer extends ListenerAdapter implements Runnable {
 
-	private String discordToken;
-	private String key;
+	private Properties settings;
 	
 	private static BotBoiServer instance;
 	
@@ -17,19 +22,24 @@ public class BotBoiServer implements Runnable {
 		return instance;
 	}
 	
-	public BotBoiServer(String discordToken, String key) {
-		this.discordToken = discordToken;
-		this.key = key;
-		
+	public BotBoiServer(Properties settings) {
 		instance = this;
+		
+		this.settings = settings;
 	}
 	
-	public String getDiscordToken() {
-		return discordToken;
+	public Properties getSettings() {
+		return settings;
 	}
 	
-	public String getKey() {
-		return key;
+	@Override
+	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+		Member guildMember = event.getMember();
+		User discordUser = guildMember.getUser();
+
+		discordUser.openPrivateChannel().queue((channel) -> {
+            channel.sendMessage("").queue();
+        });
 	}
 	
 	@Override
@@ -37,16 +47,14 @@ public class BotBoiServer implements Runnable {
 		JDA jda = null;
 		
 		try {
-			jda = new JDABuilder(AccountType.BOT).setToken(discordToken).buildAsync();
-		} catch (LoginException e) {
+			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildBlocking();
+			
+			jda.addEventListener(this);
+			jda.getPresence().setStatus(OnlineStatus.ONLINE);
+			jda.getPresence().setGame(Game.playing("mc.ruinscraft.com"));
+		} catch (Exception e) {
 			e.printStackTrace();
-			
-			System.out.println("Could not authenticate");
-			
-			return;
 		}
-		
-		
 		
 	}
 	

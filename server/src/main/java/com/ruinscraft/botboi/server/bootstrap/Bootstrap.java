@@ -1,21 +1,45 @@
 package com.ruinscraft.botboi.server.bootstrap;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.Properties;
+
 import com.ruinscraft.botboi.server.BotBoiServer;
 
 public class Bootstrap {
 
 	public static void main(String[] args) {
-		if (args.length < 2) {
-			System.out.println("Required args: <discord token> <key>");
+		// load the settings
+		Properties settings = new Properties();
+		File settingsFile = new File("server.properties");
+
+		try {
+			Properties defaults = new Properties();
+
+			InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("server.properties");
+
+			defaults.load(is);
+
+			if (!settingsFile.exists()) {
+				settingsFile.createNewFile();
+			}
 			
-			return;
+			settings.load(new FileInputStream("server.properties"));
+
+			for (Map.Entry<Object, Object> defaultValue : defaults.entrySet()) {
+				settings.putIfAbsent(defaultValue.getKey(), defaultValue.getValue());
+			}
+			
+			settings.store(new FileOutputStream("server.properties"), null);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-		String discordToken = args[0];
-		String key = args[1];
-		
+
 		// start the server
-		new BotBoiServer(discordToken, key).run();
+		new BotBoiServer(settings).run();
 	}
-	
+
 }
