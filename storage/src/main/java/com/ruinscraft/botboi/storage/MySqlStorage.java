@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -15,7 +17,8 @@ public class MySqlStorage implements SqlStorage {
 	private String create_table;
 	private String insert_key;
 	private String insert_key_with_mojang_uuid;
-	private String query_linked_account;
+	private String update_key;
+	private String query_unverified;
 
 	public MySqlStorage(String host, int port, String database, String username, String password, String botboiTable) {
 		dataSource = new HikariDataSource();
@@ -57,27 +60,38 @@ public class MySqlStorage implements SqlStorage {
 			e.printStackTrace();
 		}
 	}
+	
+	@Override
+	public void updateKey(String key, String discordId, UUID mojangUUID) {
+		try (Connection c = getConnection();
+				PreparedStatement update = c.prepareStatement(update_key)) {
+			update.setString(1, key);
+			update.setString(2, discordId);
+			update.setString(3, mojangUUID.toString());
+			update.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Override
-	public UUID getLinkedAccount(String discordId) {
-		UUID uuid = null;
-
+	public Set<String> getUnverified() {
+		Set<String> unverified = new HashSet<>();
+		
 		try (Connection c = getConnection();
-				PreparedStatement query = c.prepareStatement(query_linked_account)) {
-			query.setString(1, discordId);
-			
+				PreparedStatement query = c.prepareStatement(query_unverified)) {
 			ResultSet rs = query.executeQuery();
-
+			
 			while (rs.next()) {
-				uuid = UUID.fromString(rs.getString("mojang_uuid"));
+				unverified.add(rs.getString("discord_id"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-
-		return uuid;
+		
+		return unverified;
 	}
-
+	
 	@Override
 	public Connection getConnection() throws SQLException {
 		return dataSource.getConnection();

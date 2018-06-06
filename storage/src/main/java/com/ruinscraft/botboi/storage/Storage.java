@@ -1,5 +1,6 @@
 package com.ruinscraft.botboi.storage;
 
+import java.util.Set;
 import java.util.UUID;
 
 public interface Storage {
@@ -7,11 +8,13 @@ public interface Storage {
 	void insertKey(String key, String discordId, long time);
 	
 	void insertKey(String key, String discordId, UUID mojangUUID, long time);
+
+	void updateKey(String key, String discordId, UUID mojangUUID);
 	
-	UUID getLinkedAccount(String discordId);
+	Set<String> getUnverified();
 	
 	default boolean isVerified(String discordId) {
-		return getLinkedAccount(discordId) != null;
+		return !getUnverified().contains(discordId);
 	}
 	
 	default String generateKey() {
