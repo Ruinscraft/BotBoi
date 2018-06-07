@@ -14,14 +14,16 @@ public class MySqlStorage implements SqlStorage {
 
 	private String create_table;
 	private String insert_token;
-	private String update_token;
+	private String update_token_set_waiting;
+	private String update_token_set_used;
 	private String query_waiting;
 	private String query_token;
 
 	public MySqlStorage(String host, int port, String database, String username, String password, String botboiTable) {
-		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), waiting BOOL DEFAULT 0, UNIQUE (token));";
+		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), waiting BOOL DEFAULT 0, used BOOL DEFAULT 0, UNIQUE (token));";
 		insert_token = "INSERT INTO " + botboiTable + " (token, discord_id) VALUES (?, ?);";
-		update_token = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";
+		update_token_set_waiting = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";
+		update_token_set_used = "UPDATE " + botboiTable + " SET used = ? WHERE token = ?;";
 		query_waiting = "SELECT token, discord_id FROM " + botboiTable + " WHERE waiting = 1;";
 		query_token = "SELECT * FROM " + botboiTable + " WHERE token = ?;";
 
@@ -73,8 +75,20 @@ public class MySqlStorage implements SqlStorage {
 	@Override
 	public void setWaiting(String token, boolean waiting) {
 		try (Connection c = getConnection();
-				PreparedStatement update = c.prepareStatement(update_token)) {
+				PreparedStatement update = c.prepareStatement(update_token_set_waiting)) {
 			update.setBoolean(1, waiting);
+			update.setString(2, token);
+			update.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void setUsed(String token, boolean used) {
+		try (Connection c = getConnection();
+				PreparedStatement update = c.prepareStatement(update_token_set_used)) {
+			update.setBoolean(1, used);
 			update.setString(2, token);
 			update.executeUpdate();
 		} catch (SQLException e) {
@@ -101,21 +115,21 @@ public class MySqlStorage implements SqlStorage {
 	}
 	
 	@Override
-	public boolean canBeUsed(String token) {
+	public boolean isUsed(String token) {
 		try (Connection c = getConnection();
 				PreparedStatement query = c.prepareStatement(query_token)) {
 			query.setString(1, token);
 			
 			ResultSet rs = query.executeQuery();
 
-			if (rs.next()) {
-				return !isWaiting(token);
+			while (rs.next()) {
+				return rs.getBoolean("used");
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		
-		return false;
+		return true;
 	}
 
 	@Override

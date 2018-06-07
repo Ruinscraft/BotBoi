@@ -26,13 +26,13 @@ public class HandleUnverifiedTask extends TimerTask {
 
 	@Override
 	public void run() {
-		for (Map.Entry<String, String> unused : botBoiServer.getStorage().getWaiting().entrySet()) {
+		for (Map.Entry<String, String> waiting : botBoiServer.getStorage().getWaiting().entrySet()) {
 			String memberRoleId = botBoiServer.getSettings().getProperty("discord.memberRoleId");
 
-			botBoiServer.getStorage().setWaiting(unused.getKey(), false);
-
+			botBoiServer.getStorage().setWaiting(waiting.getKey(), false);
+			
 			try {
-				User user = botBoiServer.getJDA().getUserById(unused.getValue());
+				User user = botBoiServer.getJDA().getUserById(waiting.getValue());
 				Member member = guild.getMember(user);
 				Role role = guild.getRoleById(memberRoleId);
 

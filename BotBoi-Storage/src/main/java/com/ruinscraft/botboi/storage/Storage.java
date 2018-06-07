@@ -11,9 +11,11 @@ public interface Storage {
 
 	void setWaiting(String token, boolean waiting);
 	
+	void setUsed(String token, boolean used);
+	
 	Map<String, String> getWaiting();
 
-	boolean canBeUsed(String token);
+	boolean isUsed(String token);
 	
 	void close();
 	

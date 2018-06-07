@@ -28,9 +28,10 @@ public class DiscordCommand implements CommandExecutor {
 			if (args.length > 0) {
 				String token = args[0];
 				
-				if (BotBoiPlugin.getInstance().getStorage().canBeUsed(token)) {
+				if (!BotBoiPlugin.getInstance().getStorage().isUsed(token)) {
 					player.sendMessage(MAIN_COLOR + "Verified. You may now send messages on our Discord.");
 					
+					BotBoiPlugin.getInstance().getStorage().setUsed(token, true);
 					BotBoiPlugin.getInstance().getStorage().setWaiting(token, true);
 				} else {
 					player.sendMessage(MAIN_COLOR + "Key already used or does not exist.");
