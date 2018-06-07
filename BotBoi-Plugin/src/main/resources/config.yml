@@ -1,1 +1,10 @@
 discord_link: discord.gg/something
+
+storage:
+  mysql:
+    host: localhost
+    port: 3306
+    database: botboi
+    username: root
+    password: password
+    table: botboi_keys

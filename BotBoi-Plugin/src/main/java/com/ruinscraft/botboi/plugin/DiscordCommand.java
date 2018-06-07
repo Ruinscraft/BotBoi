@@ -21,7 +21,18 @@ public class DiscordCommand implements CommandExecutor {
 		
 		Player player = (Player) sender;
 		
-		player.sendMessage("Join the discord with: " + discordLink);
+		if (args.length > 1) {
+			String inputKey = args[0];
+			
+			if (BotBoiPlugin.getInstance().getStorage().isUnverified(inputKey)) {
+				// success
+			} else {
+				player.sendMessage("Key already used or does not exist.");
+			}
+		} else {
+			player.sendMessage("Join the discord with: " + discordLink);
+			player.sendMessage("Authenticate with /discord <key>");
+		}
 		
 		return true;
 	}

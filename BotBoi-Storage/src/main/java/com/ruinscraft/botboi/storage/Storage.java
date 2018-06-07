@@ -15,8 +15,8 @@ public interface Storage {
 	
 	Set<String> getUnverified();
 	
-	default boolean isVerified(String discordId) {
-		return !getUnverified().contains(discordId);
+	default boolean isUnverified(String discordId) {
+		return getUnverified().contains(discordId);
 	}
 	
 	default String generateKey() {
