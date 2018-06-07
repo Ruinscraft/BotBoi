@@ -21,6 +21,18 @@ public class MySqlStorage implements SqlStorage {
 	private String query_unverified;
 
 	public MySqlStorage(String host, int port, String database, String username, String password, String botboiTable) {
+		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), mojang_uuid VARCHAR(36), time BIGINT, UNIQUE (token, discord_id, mojang_uuid));";
+		insert_key = "INSERT INTO " + botboiTable + " (token, discord_id, time) VALUES (?, ?, ?);";
+		insert_key_with_mojang_uuid = "INSERT INTO " + botboiTable + " (token, discord_id, mojang_uuid, time) VALUES (?, ?, ?, ?);";
+		update_key = "UPDATE" + botboiTable + " SET mojang_uuid = ?, discord_id = ? WHERE token = ?;";
+		query_unverified = "SELECT discord_id FROM " + botboiTable + " WHERE mojang_uuid = NULL;";
+
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+		} catch (Exception e) {
+			System.out.println("MySQL driver not found");
+		}
+
 		dataSource = new HikariDataSource();
 
 		dataSource.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database);
@@ -60,14 +72,14 @@ public class MySqlStorage implements SqlStorage {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public void updateKey(String key, String discordId, UUID mojangUUID) {
 		try (Connection c = getConnection();
 				PreparedStatement update = c.prepareStatement(update_key)) {
-			update.setString(1, key);
+			update.setString(1, mojangUUID.toString());
 			update.setString(2, discordId);
-			update.setString(3, mojangUUID.toString());
+			update.setString(3, key);
 			update.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -77,21 +89,21 @@ public class MySqlStorage implements SqlStorage {
 	@Override
 	public Set<String> getUnverified() {
 		Set<String> unverified = new HashSet<>();
-		
+
 		try (Connection c = getConnection();
 				PreparedStatement query = c.prepareStatement(query_unverified)) {
 			ResultSet rs = query.executeQuery();
-			
+
 			while (rs.next()) {
 				unverified.add(rs.getString("discord_id"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 		return unverified;
 	}
-	
+
 	@Override
 	public Connection getConnection() throws SQLException {
 		return dataSource.getConnection();
