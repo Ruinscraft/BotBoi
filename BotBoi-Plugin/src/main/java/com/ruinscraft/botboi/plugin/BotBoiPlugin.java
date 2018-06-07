@@ -19,6 +19,8 @@ public class BotBoiPlugin extends JavaPlugin {
 	public void onEnable() {
 		instance = this;
 		
+		saveDefaultConfig();
+		
 		this.storage = new MySqlStorage(
 				getConfig().getString("storage.mysql.host"),
 				Integer.parseInt(getConfig().getString("storage.mysql.port")),

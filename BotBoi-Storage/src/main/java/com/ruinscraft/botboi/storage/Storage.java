@@ -1,25 +1,25 @@
 package com.ruinscraft.botboi.storage;
 
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 
 public interface Storage {
 
 	boolean isSetup();
 	
-	void insertKey(String key, String discordId, long time);
-	
-	void insertKey(String key, String discordId, UUID mojangUUID, long time);
+	void insertToken(String token, String discordId);
 
-	void updateKey(String key, String discordId, UUID mojangUUID);
+	void setWaiting(String token, boolean waiting);
 	
-	Set<String> getUnverified();
+	Map<String, String> getWaiting();
+
+	boolean canBeUsed(String token);
 	
-	default boolean isUnverified(String discordId) {
-		return getUnverified().contains(discordId);
+	default boolean isWaiting(String token) {
+		return getWaiting().containsKey(token);
 	}
 	
-	default String generateKey() {
+	default String generateToken() {
 		return UUID.randomUUID().toString().substring(0, 7);
 	}
 	

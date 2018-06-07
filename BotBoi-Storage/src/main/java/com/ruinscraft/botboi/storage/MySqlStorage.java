@@ -4,10 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
+import java.util.HashMap;
+import java.util.Map;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class MySqlStorage implements SqlStorage {
@@ -15,17 +13,17 @@ public class MySqlStorage implements SqlStorage {
 	private HikariDataSource dataSource;
 
 	private String create_table;
-	private String insert_key;
-	private String insert_key_with_mojang_uuid;
-	private String update_key;
-	private String query_unverified;
+	private String insert_token;
+	private String update_token;
+	private String query_waiting;
+	private String query_token;
 
 	public MySqlStorage(String host, int port, String database, String username, String password, String botboiTable) {
-		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), mojang_uuid VARCHAR(36), time BIGINT, UNIQUE (token, discord_id, mojang_uuid));";
-		insert_key = "INSERT INTO " + botboiTable + " (token, discord_id, time) VALUES (?, ?, ?);";
-		insert_key_with_mojang_uuid = "INSERT INTO " + botboiTable + " (token, discord_id, mojang_uuid, time) VALUES (?, ?, ?, ?);";
-		update_key = "UPDATE" + botboiTable + " SET mojang_uuid = ?, discord_id = ? WHERE token = ?;";
-		query_unverified = "SELECT discord_id FROM " + botboiTable + " WHERE mojang_uuid = NULL;";
+		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), waiting BOOL DEFAULT 0, UNIQUE (token));";
+		insert_token = "INSERT INTO " + botboiTable + " (token, discord_id) VALUES (?, ?);";
+		update_token = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";
+		query_waiting = "SELECT token, discord_id FROM " + botboiTable + " WHERE waiting = 1;";
+		query_token = "SELECT * FROM " + botboiTable + " WHERE token = ?;";
 
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -61,39 +59,23 @@ public class MySqlStorage implements SqlStorage {
 	}
 	
 	@Override
-	public void insertKey(String key, String discordId, long time) {
+	public void insertToken(String token, String discordId) {
 		try (Connection c = getConnection();
-				PreparedStatement insert = c.prepareStatement(insert_key)) {
-			insert.setString(1, key);
+				PreparedStatement insert = c.prepareStatement(insert_token)) {
+			insert.setString(1, token);
 			insert.setString(2, discordId);
-			insert.setLong(3, time);
 			insert.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
-
+	
 	@Override
-	public void insertKey(String key, String discordId, UUID mojangUUID, long time) {
+	public void setWaiting(String token, boolean waiting) {
 		try (Connection c = getConnection();
-				PreparedStatement insert = c.prepareStatement(insert_key_with_mojang_uuid)) {
-			insert.setString(1, key);
-			insert.setString(2, discordId);
-			insert.setString(3, mojangUUID.toString());
-			insert.setLong(4, time);
-			insert.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void updateKey(String key, String discordId, UUID mojangUUID) {
-		try (Connection c = getConnection();
-				PreparedStatement update = c.prepareStatement(update_key)) {
-			update.setString(1, mojangUUID.toString());
-			update.setString(2, discordId);
-			update.setString(3, key);
+				PreparedStatement update = c.prepareStatement(update_token)) {
+			update.setBoolean(1, waiting);
+			update.setString(2, token);
 			update.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -101,21 +83,39 @@ public class MySqlStorage implements SqlStorage {
 	}
 
 	@Override
-	public Set<String> getUnverified() {
-		Set<String> unverified = new HashSet<>();
+	public Map<String, String> getWaiting() {
+		Map<String, String> waiting = new HashMap<>();
 
 		try (Connection c = getConnection();
-				PreparedStatement query = c.prepareStatement(query_unverified)) {
+				PreparedStatement query = c.prepareStatement(query_waiting)) {
 			ResultSet rs = query.executeQuery();
 
 			while (rs.next()) {
-				unverified.add(rs.getString("discord_id"));
+				waiting.put(rs.getString("token"), rs.getString("discord_id"));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
-		return unverified;
+		return waiting;
+	}
+	
+	@Override
+	public boolean canBeUsed(String token) {
+		try (Connection c = getConnection();
+				PreparedStatement query = c.prepareStatement(query_token)) {
+			query.setString(1, token);
+			
+			ResultSet rs = query.executeQuery();
+
+			if (rs.next()) {
+				return !isWaiting(token);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return false;
 	}
 
 	@Override

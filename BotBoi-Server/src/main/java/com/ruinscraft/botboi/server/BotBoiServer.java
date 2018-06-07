@@ -63,15 +63,15 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		Member guildMember = event.getMember();
 		User discordUser = guildMember.getUser();
 
-		String key = storage.generateKey();
+		String token = storage.generateToken();
 		
-		String welcomeMessage = String.format(settings.getProperty("messages.welcome"), key);
+		String welcomeMessage = String.format(settings.getProperty("messages.welcome"), token);
 		
 		discordUser.openPrivateChannel().queue((channel) -> {
             channel.sendMessage(welcomeMessage).queue();
         });
 		
-		storage.insertKey(key, discordUser.getId(), System.currentTimeMillis());
+		storage.insertToken(token, discordUser.getId());
 	}
 	
 	@Override
