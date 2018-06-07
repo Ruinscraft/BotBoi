@@ -1,6 +1,8 @@
 package com.ruinscraft.botboi.server;
 
 import java.util.Properties;
+import java.util.Timer;
+import java.util.concurrent.TimeUnit;
 
 import com.ruinscraft.botboi.storage.MySqlStorage;
 import com.ruinscraft.botboi.storage.Storage;
@@ -20,6 +22,9 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	private Properties settings;
 	private Storage storage;
 	
+	private JDA jda;
+	private final Timer timer;
+	
 	private static BotBoiServer instance;
 	
 	public static BotBoiServer getInstance() {
@@ -28,6 +33,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	
 	public BotBoiServer(Properties settings) {
 		instance = this;
+		
+		this.timer = new Timer();
 		
 		this.settings = settings;
 		this.storage = new MySqlStorage(
@@ -45,6 +52,10 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	
 	public Storage getStorage() {
 		return storage;
+	}
+	
+	public JDA getJDA() {
+		return jda;
 	}
 	
 	@Override
@@ -65,18 +76,22 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	
 	@Override
 	public void run() {
-		JDA jda = null;
-		
 		try {
 			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildBlocking();
-			
-			jda.addEventListener(this);
-			jda.getPresence().setStatus(OnlineStatus.ONLINE);
-			jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.out.println("Could not authenticate with Discord.");
+			return;
+		}
+
+		if (!storage.isSetup()) {
+			return;
 		}
 		
+		jda.addEventListener(this);
+		jda.getPresence().setStatus(OnlineStatus.ONLINE);
+		jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
+		
+		timer.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, TimeUnit.SECONDS.toMillis(5));
 	}
 	
 }

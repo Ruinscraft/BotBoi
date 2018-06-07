@@ -52,6 +52,15 @@ public class MySqlStorage implements SqlStorage {
 	}
 
 	@Override
+	public boolean isSetup() {
+		if (dataSource.isClosed() || dataSource == null) {
+			return false;
+		}
+		
+		return true;
+	}
+	
+	@Override
 	public void insertKey(String key, String discordId, long time) {
 		try (Connection c = getConnection();
 				PreparedStatement insert = c.prepareStatement(insert_key)) {

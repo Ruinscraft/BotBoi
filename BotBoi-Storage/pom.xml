@@ -5,11 +5,11 @@
 
 	<parent>
 		<groupId>com.ruinscraft</groupId>
-		<artifactId>botboi</artifactId>
+		<artifactId>BotBoi-Parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>storage</artifactId>
+	<artifactId>BotBoi-Storage</artifactId>
 
 	<dependencies>
 		<dependency>

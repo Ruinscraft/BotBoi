@@ -5,6 +5,8 @@ import java.util.UUID;
 
 public interface Storage {
 
+	boolean isSetup();
+	
 	void insertKey(String key, String discordId, long time);
 	
 	void insertKey(String key, String discordId, UUID mojangUUID, long time);

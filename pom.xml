@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.ruinscraft</groupId>
-	<artifactId>botboi</artifactId>
+	<artifactId>BotBoi-Parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
@@ -11,13 +11,13 @@
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<jar.finalName>BotBoi-${project.name}</jar.finalName>
+		<jar.finalName>${project.name}</jar.finalName>
 	</properties>
 
 	<modules>
-		<module>plugin</module>
-		<module>server</module>
-		<module>storage</module>
+		<module>BotBoi-Plugin</module>
+		<module>BotBoi-Server</module>
+		<module>BotBoi-Storage</module>
 	</modules>
 
   <build>
