@@ -34,6 +34,11 @@ public class BotBoiPlugin extends JavaPlugin {
 		getCommand("discord").setExecutor(new DiscordCommand(discordLink));
 	}
 	
+	@Override
+	public void onDisable() {
+		storage.close();
+	}
+	
 	public Storage getStorage() {
 		return storage;
 	}

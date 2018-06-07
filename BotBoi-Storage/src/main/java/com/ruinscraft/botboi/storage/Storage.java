@@ -15,6 +15,8 @@ public interface Storage {
 
 	boolean canBeUsed(String token);
 	
+	void close();
+	
 	default boolean isWaiting(String token) {
 		return getWaiting().containsKey(token);
 	}

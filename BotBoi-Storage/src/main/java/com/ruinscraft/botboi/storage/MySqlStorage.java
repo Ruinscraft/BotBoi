@@ -133,4 +133,9 @@ public class MySqlStorage implements SqlStorage {
 		}
 	}
 
+	@Override
+	public void close() {
+		dataSource.close();
+	}
+
 }
