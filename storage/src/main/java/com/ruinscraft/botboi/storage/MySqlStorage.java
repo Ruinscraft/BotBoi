@@ -34,7 +34,8 @@ public class MySqlStorage implements SqlStorage {
 		}
 
 		dataSource = new HikariDataSource();
-
+		
+		dataSource.setDriverClassName("com.mysql.jdbc.Driver");
 		dataSource.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database);
 		dataSource.setUsername(username);
 		dataSource.setPassword(password);
@@ -43,7 +44,11 @@ public class MySqlStorage implements SqlStorage {
 		dataSource.setConnectionTimeout(3000);
 		dataSource.setLeakDetectionThreshold(3000);
 
-		createTable();
+		try {
+			createTable();
+		} catch (SQLException e) {
+			System.out.println("Could not connect to the database. Check your connection settings.");
+		}
 	}
 
 	@Override
@@ -110,12 +115,12 @@ public class MySqlStorage implements SqlStorage {
 	}
 
 	@Override
-	public void createTable() {
+	public void createTable() throws SQLException {
 		try (Connection c = getConnection();
 				PreparedStatement update = c.prepareStatement(create_table)) {
 			update.execute();
 		} catch (SQLException e) {
-			e.printStackTrace();
+			throw e;
 		}
 	}
 

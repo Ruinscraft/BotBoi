@@ -7,6 +7,6 @@ public interface SqlStorage extends Storage {
 
 	Connection getConnection() throws SQLException;
 	
-	void createTable();
+	void createTable() throws SQLException;
 	
 }
