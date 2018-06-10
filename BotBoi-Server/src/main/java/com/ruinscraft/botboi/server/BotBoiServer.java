@@ -21,21 +21,21 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	private Properties settings;
 	private Storage storage;
-	
+
 	private JDA jda;
 	private final Timer timer;
-	
+
 	private static BotBoiServer instance;
-	
+
 	public static BotBoiServer getInstance() {
 		return instance;
 	}
-	
+
 	public BotBoiServer(Properties settings) {
 		instance = this;
-		
+
 		this.timer = new Timer();
-		
+
 		this.settings = settings;
 		this.storage = new MySqlStorage(
 				settings.getProperty("storage.mysql.host"),
@@ -45,39 +45,52 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 				settings.getProperty("storage.mysql.password"),
 				settings.getProperty("storage.mysql.table"));
 	}
-	
+
+	public synchronized void shutdown() {
+		System.out.println("Shutting down...");
+		
+		try {
+			storage.close();
+			jda.shutdown();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		System.exit(0);
+	}
+
 	public Properties getSettings() {
 		return settings;
 	}
-	
+
 	public Storage getStorage() {
 		return storage;
 	}
-	
+
 	public JDA getJDA() {
 		return jda;
 	}
-	
+
 	@Override
 	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
 		Member guildMember = event.getMember();
 		User discordUser = guildMember.getUser();
 
 		String token = storage.generateToken();
-		
+
 		String welcomeMessage = String.format(settings.getProperty("messages.welcome"), token);
-		
+
 		discordUser.openPrivateChannel().queue((channel) -> {
-            channel.sendMessage(welcomeMessage).queue();
-        });
-		
+			channel.sendMessage(welcomeMessage).queue();
+		});
+
 		storage.insertToken(token, discordUser.getId());
 	}
-	
+
 	@Override
 	public void run() {
 		try {
-			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildBlocking();
+			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildAsync();
 		} catch (Exception e) {
 			System.out.println("Could not authenticate with Discord.");
 			return;
@@ -86,12 +99,12 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		if (!storage.isSetup()) {
 			return;
 		}
-		
+
 		jda.addEventListener(this);
 		jda.getPresence().setStatus(OnlineStatus.ONLINE);
 		jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
-		
+
 		timer.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, TimeUnit.SECONDS.toMillis(5));
 	}
-	
+
 }

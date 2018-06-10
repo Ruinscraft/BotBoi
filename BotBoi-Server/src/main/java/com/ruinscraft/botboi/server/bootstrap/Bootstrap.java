@@ -6,10 +6,13 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 
 import com.ruinscraft.botboi.server.BotBoiServer;
 
 public class Bootstrap {
+
+	private static Scanner inputScanner = new Scanner(System.in);
 
 	public static void main(String[] args) {
 		// load the settings
@@ -26,20 +29,32 @@ public class Bootstrap {
 			if (!settingsFile.exists()) {
 				settingsFile.createNewFile();
 			}
-			
+
 			settings.load(new FileInputStream("server.properties"));
 
 			for (Map.Entry<Object, Object> defaultValue : defaults.entrySet()) {
 				settings.putIfAbsent(defaultValue.getKey(), defaultValue.getValue());
 			}
-			
+
 			settings.store(new FileOutputStream("server.properties"), null);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		// start the server
-		new BotBoiServer(settings).run();
+		BotBoiServer server = new BotBoiServer(settings);
+		
+		server.run();
+		
+		new Thread(()->{
+			while (true) {
+				String input = inputScanner.nextLine();
+
+				if (input.equalsIgnoreCase("stop")) {
+					server.shutdown();
+				}
+			}
+		}).start();
 	}
 
 }
