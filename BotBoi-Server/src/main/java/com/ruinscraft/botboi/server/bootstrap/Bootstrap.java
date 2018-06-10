@@ -47,9 +47,9 @@ public class Bootstrap {
 		server.run();
 		
 		new Thread(()->{
-			while (true) {
+			while (inputScanner.hasNextLine()) {
 				String input = inputScanner.nextLine();
-
+				
 				if (input.equalsIgnoreCase("stop")) {
 					server.shutdown();
 				}
