@@ -84,6 +84,9 @@ public class MessageHandler {
 			message = message.replace("{user-rank}", 
 					getBestRole(event.getMessage().getGuild().getMember(user)).getName());
 		}
+		if (message.contains("{message}")) {
+			message = message.replace("{message}", event.getMessage().getContentRaw());
+		}
 		if (message.contains("{online-count}")) {
 			Guild guild = event.getMessage().getGuild();
 			int amountOnlineOrIdle = 0;
@@ -109,7 +112,11 @@ public class MessageHandler {
 				}
 			}
 			Member chosen = staff.get((int) (Math.random() * (staff.size() - 1)));
-			message = message.replace("{staff-random}", chosen.getEffectiveName());
+			String name = chosen.getNickname();
+			if (name == null) {
+				name = chosen.getEffectiveName();
+			}
+			message = message.replace("{staff-random}", name);
 		}
 		while (message.contains("{add-reaction:")) {
 			String getReaction = message.substring(

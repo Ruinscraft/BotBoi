@@ -109,6 +109,9 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	public void onMessageReceived(MessageReceivedEvent event) {
 		String message = event.getMessage().getContentRaw();
 		if (message.contains("<@453668483528523776>")) {
+			if (event.getAuthor().getId().equals(jda.getSelfUser().getId())) {
+				return;
+			}
 			String response = MessageHandler.getMessage(message);
 			if (response == null) {
 				System.out.println("response null!");
