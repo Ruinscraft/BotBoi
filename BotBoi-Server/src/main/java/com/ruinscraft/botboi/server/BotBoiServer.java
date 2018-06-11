@@ -83,8 +83,10 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			String word = wordsTogether.substring(0, wordsTogether.indexOf(";") + 1);
 			wordsTogether = wordsTogether.replace(word, "");
 			word = word.replace(";", "").toLowerCase();
+			System.out.println("Adding '" + word + "' as a search word");
 			wordsSeparated.add(word);
 		}
+		System.out.println("Adding '" + wordsTogether + "' as a search word");
 		wordsSeparated.add(wordsTogether);
 		return wordsSeparated;
 	}
