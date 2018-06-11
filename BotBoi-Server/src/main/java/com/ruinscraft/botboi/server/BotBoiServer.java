@@ -15,13 +15,9 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.events.message.priv.PrivateMessageReceivedEvent;
-import net.dv8tion.jda.core.events.message.priv.react.PrivateMessageReactionAddEvent;
-import net.dv8tion.jda.core.events.message.priv.react.PrivateMessageReactionRemoveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 public class BotBoiServer extends ListenerAdapter implements Runnable {
@@ -107,34 +103,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		});
 
 		storage.insertToken(token, discordUser.getId());
-	}
-
-	@Override
-	public void onPrivateMessageReceived(PrivateMessageReceivedEvent event) {
-		Message message = event.getMessage();
-		String messageString = message.getContentStripped().toLowerCase();
-		if (messageString.contains("thank") || messageString.contains("thank you")
-				|| messageString.contains("thx")) {
-			message.addReaction("👌").queue();
-			event.getChannel().sendMessage("No problem!").queue();
-		}
-	}
-
-	@Override
-	public void onPrivateMessageReactionAdd(PrivateMessageReactionAddEvent event) {
-		if (event.getUser().isBot()) {
-			return;
-		}
-		event.getReaction().removeReaction().queue();
-	}
-
-	@Override
-	public void onPrivateMessageReactionRemove(PrivateMessageReactionRemoveEvent event) {
-		if (event.getUser().isBot()) {
-			return;
-		}
-		event.getChannel().getMessageById(event.getMessageId())
-		.complete().addReaction(event.getReactionEmote().getName()).queue();
 	}
 
 	@Override
