@@ -111,7 +111,7 @@ public class MessageHandler {
 			Member chosen = staff.get((int) (Math.random() * (staff.size() - 1)));
 			message = message.replace("{staff-random}", chosen.getEffectiveName());
 		}
-		if (message.contains("{add-reaction:")) {
+		while (message.contains("{add-reaction:")) {
 			String getReaction = message.substring(
 					message.indexOf("{add-reaction:"), message.indexOf("}"));
 			getReaction = getReaction.replace("{add-reaction:", "").replace("}", "");
