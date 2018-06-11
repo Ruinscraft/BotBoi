@@ -90,7 +90,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	@Override
 	public void run() {
 		try {
-			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildAsync();
+			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildBlocking();
 		} catch (Exception e) {
 			System.out.println("Could not authenticate with Discord.");
 			return;

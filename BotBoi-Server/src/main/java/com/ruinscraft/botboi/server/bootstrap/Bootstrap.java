@@ -41,10 +41,14 @@ public class Bootstrap {
 			e.printStackTrace();
 		}
 
-		// start the server
 		BotBoiServer server = new BotBoiServer(settings);
 		
-		server.run();
+		// start the server safely
+		try {
+			server.run();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		
 		new Thread(()->{
 			while (inputScanner.hasNextLine()) {
