@@ -5,13 +5,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
-import java.util.Set;
 
 import com.google.gdata.client.spreadsheet.SpreadsheetService;
 import com.google.gdata.data.spreadsheet.CustomElementCollection;
@@ -27,20 +23,45 @@ import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class MessageHandler {
 
-	private static Map<String, Set<String>> allMessages = new HashMap<>();
-	private static Map<String, Queue<String>> messages = new HashMap<>();
+	private static Map<String, List<String>> allMessages = new HashMap<>();
+	private static Map<String, List<String>> messages = new HashMap<>();
 
-	public static Map<String, Set<String>> getAllMessages() {
+	public static Map<String, List<String>> getAllMessages() {
 		return allMessages;
 	}
 
-	public static void loadEntries(Set<String> entries) {
+	public static void addMessage(String searchWord, String message) {
+		List<String> existingMessages = messages.get(searchWord);
+		if (existingMessages == null) {
+			messages.put(searchWord, new ArrayList<>());
+		}
+		existingMessages = messages.get(searchWord);
+		existingMessages.add(message);
+		messages.put(searchWord, existingMessages);
+	}
+
+	public static void addMessages(String searchWord, Collection<String> messagesSet) {
+		List<String> existingMessages = messages.get(searchWord);
+		if (existingMessages == null) {
+			messages.put(searchWord, new ArrayList<>());
+		}
+		existingMessages = messages.get(searchWord);
+		existingMessages.addAll(messagesSet);
+		messages.put(searchWord, existingMessages);
+	}
+
+	public static void loadEntries(List<String> entries) {
 		getMessagesFromGoogle(entries);
 
-		for (Entry<String, Set<String>> entry : allMessages.entrySet()) {
-			Queue<String> newQueue = new LinkedList<>();
-			newQueue.addAll(new HashSet<>(entry.getValue()));
-			messages.put(new String(entry.getKey()), newQueue);
+		for (Entry<String, List<String>> entry : allMessages.entrySet()) {
+			String searchWord = entry.getKey();
+			List<String> messages = entry.getValue();
+			System.out.println("Adding '" + searchWord + 
+					"' search-word with " + messages.size() 
+					+ " messages");
+			List<String> newList = new ArrayList<>();
+			newList.addAll(entry.getValue());
+			addMessages(entry.getKey(), newList);
 		}
 	}
 
@@ -79,20 +100,31 @@ public class MessageHandler {
 			Role botRole = getBestRole(guild.getMember(event.getJDA().getSelfUser()));
 			List<Member> staff = new ArrayList<>();
 			for (Member member : guild.getMembers()) {
+				if (!member.getOnlineStatus().equals(OnlineStatus.ONLINE) &&
+						!member.getOnlineStatus().equals(OnlineStatus.IDLE)) {
+					continue;
+				}
 				if (getBestRole(member).compareTo(botRole) > 0) {
 					staff.add(member);
 				}
 			}
 			Member chosen = staff.get((int) (Math.random() * (staff.size() - 1)));
-			message = message.replace("{staff-random}", chosen.getNickname());
+			message = message.replace("{staff-random}", chosen.getEffectiveName());
 		}
 		if (message.contains("{add-reaction:")) {
-			Guild guild = event.getMessage().getGuild();
 			String getReaction = message.substring(
 					message.indexOf("{add-reaction:"), message.indexOf("}"));
 			getReaction = getReaction.replace("{add-reaction:", "").replace("}", "");
-			event.getMessage().addReaction(guild.getEmoteById(getReaction)).queue();
 			message = message.replace("{add-reaction:" + getReaction + "}", "");
+			if (getReaction.contains("<:")) {
+				Guild guild = event.getGuild();
+				getReaction = getReaction.replace("<:", "");
+				getReaction = getReaction.substring(
+						getReaction.indexOf(":") + 1, getReaction.length() - 1);
+				event.getMessage().addReaction(guild.getEmoteById(getReaction)).queue();
+			} else {
+				event.getMessage().addReaction(getReaction).queue();
+			}
 		}
 		return message;
 	}
@@ -101,7 +133,7 @@ public class MessageHandler {
 		SpreadsheetService service = new SpreadsheetService("Sheet1");
 
 		for (String lookFor : lookFors) {
-			allMessages.put(lookFor, new HashSet<>());
+			allMessages.put(lookFor, new ArrayList<>());
 		}
 
 		try {
@@ -112,7 +144,12 @@ public class MessageHandler {
 			for (ListEntry le : lf.getEntries()) {
 				CustomElementCollection cec = le.getCustomElements();
 				for (String lookFor : lookFors) {
-					allMessages.get(lookFor).add(cec.getValue(lookFor));
+					String removedSpaces = lookFor.replace(" ", "");
+					String message = cec.getValue(removedSpaces);
+					if (message == null) {
+						continue;
+					}
+					allMessages.get(lookFor).add(message);
 				}
 			}
 		} catch (Exception e) {
@@ -121,29 +158,38 @@ public class MessageHandler {
 	}
 
 	public static String getMessage(String sent) {
-		for (Entry<String, Queue<String>> entry : messages.entrySet()) {
+		for (Entry<String, List<String>> entry : messages.entrySet()) {
 			String lookFor = entry.getKey();
 			if (lookFor.equals("else")) {
 				continue;
 			}
 			if (sent.toLowerCase().contains(lookFor)) {
-				Queue<String> toSendBack = entry.getValue();
-				if (toSendBack.poll() == null) {
-					addNewMessages(lookFor);
-				}
-				return messages.get(lookFor).poll();
+				return returnNewMessage(lookFor);
 			}
 		}
-		if (messages.get("else").poll() == null) {
-			addNewMessages("else");
+		return returnNewMessage("else");
+	}
+
+	private static String returnNewMessage(String lookFor) {
+		String newMessage = null;
+		for (String string : messages.get(lookFor)) {
+			newMessage = string;
+			break;
 		}
-		return messages.get("else").poll();
+		if (newMessage == null) {
+			addNewMessages(lookFor);
+			for (String string : messages.get(lookFor)) {
+				newMessage = string;
+				break;
+			}
+		}
+		messages.get(lookFor).remove(newMessage);
+		return newMessage;
 	}
 
 	public static void addNewMessages(String lookFor) {
-		Queue<String> newMessages = new LinkedList<>();
-		newMessages.addAll(allMessages.get(lookFor));
-		Collections.shuffle((List<?>) newMessages);
+		List<String> newMessages = new ArrayList<>(allMessages.get(lookFor));
+		Collections.shuffle(newMessages);
 		messages.put(lookFor, newMessages);
 	}
 

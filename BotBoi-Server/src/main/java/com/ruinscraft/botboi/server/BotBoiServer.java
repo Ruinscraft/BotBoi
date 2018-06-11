@@ -1,8 +1,8 @@
 package com.ruinscraft.botboi.server;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
@@ -76,17 +76,15 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return jda;
 	}
 
-	public Set<String> getSearchWords() {
+	public List<String> getSearchWords() {
 		String wordsTogether = settings.getProperty("sheet.searchwords");
-		Set<String> wordsSeparated = new HashSet<>();
+		List<String> wordsSeparated = new ArrayList<>();
 		while (wordsTogether.contains(";")) {
 			String word = wordsTogether.substring(0, wordsTogether.indexOf(";") + 1);
 			wordsTogether = wordsTogether.replace(word, "");
 			word = word.replace(";", "").toLowerCase();
-			System.out.println("Adding '" + word + "' as a search word");
 			wordsSeparated.add(word);
 		}
-		System.out.println("Adding '" + wordsTogether + "' as a search word");
 		wordsSeparated.add(wordsTogether);
 		return wordsSeparated;
 	}
@@ -112,6 +110,9 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		String message = event.getMessage().getContentRaw();
 		if (message.contains("<@453668483528523776>")) {
 			String response = MessageHandler.getMessage(message);
+			if (response == null) {
+				System.out.println("response null!");
+			}
 			response = MessageHandler.replacePlaceholders(response, event);
 			event.getChannel().sendMessage(response).queue();
 		}
