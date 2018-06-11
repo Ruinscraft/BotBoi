@@ -1,6 +1,8 @@
 package com.ruinscraft.botboi.server;
 
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
@@ -13,8 +15,13 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.priv.PrivateMessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.priv.react.PrivateMessageReactionAddEvent;
+import net.dv8tion.jda.core.events.message.priv.react.PrivateMessageReactionRemoveEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 public class BotBoiServer extends ListenerAdapter implements Runnable {
@@ -44,18 +51,20 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 				settings.getProperty("storage.mysql.username"),
 				settings.getProperty("storage.mysql.password"),
 				settings.getProperty("storage.mysql.table"));
+
+		MessageHandler.loadEntries(getSearchWords());
 	}
 
 	public synchronized void shutdown() {
 		System.out.println("Shutting down...");
-		
+
 		try {
 			storage.close();
 			jda.shutdown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		System.exit(0);
 	}
 
@@ -69,6 +78,19 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	public JDA getJDA() {
 		return jda;
+	}
+
+	public Set<String> getSearchWords() {
+		String wordsTogether = settings.getProperty("sheet.searchwords");
+		Set<String> wordsSeparated = new HashSet<>();
+		while (wordsTogether.contains(";")) {
+			String word = wordsTogether.substring(0, wordsTogether.indexOf(";") + 1);
+			wordsTogether = wordsTogether.replace(word, "");
+			word = word.replace(";", "").toLowerCase();
+			wordsSeparated.add(word);
+		}
+		wordsSeparated.add(wordsTogether);
+		return wordsSeparated;
 	}
 
 	@Override
@@ -85,6 +107,44 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		});
 
 		storage.insertToken(token, discordUser.getId());
+	}
+
+	@Override
+	public void onPrivateMessageReceived(PrivateMessageReceivedEvent event) {
+		Message message = event.getMessage();
+		String messageString = message.getContentStripped().toLowerCase();
+		if (messageString.contains("thank") || messageString.contains("thank you")
+				|| messageString.contains("thx")) {
+			message.addReaction("👌").queue();
+			event.getChannel().sendMessage("No problem!").queue();
+		}
+	}
+
+	@Override
+	public void onPrivateMessageReactionAdd(PrivateMessageReactionAddEvent event) {
+		if (event.getUser().isBot()) {
+			return;
+		}
+		event.getReaction().removeReaction().queue();
+	}
+
+	@Override
+	public void onPrivateMessageReactionRemove(PrivateMessageReactionRemoveEvent event) {
+		if (event.getUser().isBot()) {
+			return;
+		}
+		event.getChannel().getMessageById(event.getMessageId())
+		.complete().addReaction(event.getReactionEmote().getName()).queue();
+	}
+
+	@Override
+	public void onMessageReceived(MessageReceivedEvent event) {
+		String message = event.getMessage().getContentRaw();
+		if (message.contains("<@453668483528523776>")) {
+			String response = MessageHandler.getMessage(message);
+			response = MessageHandler.replacePlaceholders(response, event);
+			event.getChannel().sendMessage(response).queue();
+		}
 	}
 
 	@Override

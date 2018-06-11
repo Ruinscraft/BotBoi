@@ -42,18 +42,18 @@ public class Bootstrap {
 		}
 
 		BotBoiServer server = new BotBoiServer(settings);
-		
+
 		// start the server safely
 		try {
 			server.run();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		new Thread(()->{
 			while (inputScanner.hasNextLine()) {
 				String input = inputScanner.nextLine();
-				
+
 				if (input.equalsIgnoreCase("stop")) {
 					server.shutdown();
 				}
