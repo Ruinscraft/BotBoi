@@ -4,9 +4,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import com.ruinscraft.botboi.server.BotBoiServer;
 
@@ -18,11 +22,13 @@ public class Bootstrap {
 		// load the settings
 		Properties settings = new Properties();
 		File settingsFile = new File("server.properties");
+		Map<String, Integer> names = new HashMap<>();
 
 		try {
 			Properties defaults = new Properties();
 
-			InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("server.properties");
+			InputStream is = Thread.currentThread()
+					.getContextClassLoader().getResourceAsStream("server.properties");
 
 			defaults.load(is);
 
@@ -37,11 +43,27 @@ public class Bootstrap {
 			}
 
 			settings.store(new FileOutputStream("server.properties"), null);
+
+			for (String name : Files.lines(FileSystems.getDefault().getPath("names.txt"))
+					.collect(Collectors.toSet())) {
+				name = name.replace(",F,", " ");
+				name = name.replace(",M,", " ");
+				String frequency = name.substring(name.indexOf(" "), name.length());
+				name = name.replace(frequency, "");
+				frequency = frequency.replace(" ", "");
+				int frequencyInt = 0;
+				try {
+					frequencyInt = Integer.valueOf(frequency);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+				names.put(name, frequencyInt);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		BotBoiServer server = new BotBoiServer(settings);
+		BotBoiServer server = new BotBoiServer(settings, names);
 
 		// start the server safely
 		try {

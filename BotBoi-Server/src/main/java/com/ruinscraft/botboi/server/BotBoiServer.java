@@ -2,6 +2,8 @@ package com.ruinscraft.botboi.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +26,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	private Properties settings;
 	private Storage storage;
+	private Map<String, Integer> names;
 
 	private JDA jda;
 	private final Timer timer;
@@ -34,12 +37,13 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return instance;
 	}
 
-	public BotBoiServer(Properties settings) {
+	public BotBoiServer(Properties settings, Map<String, Integer> names) {
 		instance = this;
 
 		this.timer = new Timer();
 
 		this.settings = settings;
+		this.names = names;
 		this.storage = new MySqlStorage(
 				settings.getProperty("storage.mysql.host"),
 				Integer.parseInt(settings.getProperty("storage.mysql.port")),
@@ -70,6 +74,31 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	public Storage getStorage() {
 		return storage;
+	}
+
+	public Map<String, Integer> getNames() {
+		return names;
+	}
+
+	public String getBestName(String username) {
+		String lowerCaseUsername = username.toLowerCase();
+		String bestName = null;
+		for (Entry<String, Integer> entry : names.entrySet()) {
+			String name = entry.getKey();
+			if (lowerCaseUsername.contains(name.toLowerCase())) {
+				if (bestName == null) {
+					bestName = name;
+					continue;
+				}
+				if (entry.getValue() > names.get(bestName)) {
+					bestName = name;
+				}
+			}
+		}
+		if (bestName == null) {
+			return username;
+		}
+		return bestName;
 	}
 
 	public JDA getJDA() {

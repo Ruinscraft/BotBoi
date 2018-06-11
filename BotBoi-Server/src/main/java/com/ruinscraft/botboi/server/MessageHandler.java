@@ -87,6 +87,10 @@ public class MessageHandler {
 		if (message.contains("{message}")) {
 			message = message.replace("{message}", event.getMessage().getContentRaw());
 		}
+		if (message.contains("{real-name}")) {
+			message = message.replace("{real-name}", 
+					BotBoiServer.getInstance().getBestName(event.getAuthor().getName()));
+		}
 		if (message.contains("{online-count}")) {
 			Guild guild = event.getMessage().getGuild();
 			int amountOnlineOrIdle = 0;
