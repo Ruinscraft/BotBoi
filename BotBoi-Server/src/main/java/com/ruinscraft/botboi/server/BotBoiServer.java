@@ -80,35 +80,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return names;
 	}
 
-	public String getBestName(String username) {
-		String lowerCaseUsername = username.toLowerCase();
-		String bestName = null;
-		for (Entry<String, Integer> entry : names.entrySet()) {
-			String name = entry.getKey();
-			if (lowerCaseUsername.contains(name.toLowerCase())) {
-				if (bestName == null) {
-					bestName = name;
-					continue;
-				}
-				int frequency = entry.getValue();
-				String originalName = username.substring(
-						lowerCaseUsername.indexOf(name.toLowerCase()), 
-						lowerCaseUsername.indexOf(name.toLowerCase()) + name.length());
-				if (!originalName.substring(0, 1)
-						.equals(originalName.substring(0, 1).toLowerCase())) {
-					frequency = frequency * 5;
-				}
-				if (frequency > names.get(bestName)) {
-					bestName = name;
-				}
-			}
-		}
-		if (bestName == null) {
-			return username;
-		}
-		return bestName;
-	}
-
 	public JDA getJDA() {
 		return jda;
 	}

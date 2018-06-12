@@ -75,6 +75,56 @@ public class MessageHandler {
 		return bestRole;
 	}
 
+	public static String getBestName(String username) {
+		int cutOff = getIndexOfNumber(username.toLowerCase(), username.length());
+		if (cutOff != -1) {
+			username = username.substring(0, cutOff);
+		}
+		if (username.length() < 8 || username.length() > 30) {
+			return username;
+		}
+		Map<String, Integer> names = BotBoiServer.getInstance().getNames();
+		String lowerCaseUsername = username.toLowerCase();
+		String bestName = null;
+		for (Entry<String, Integer> entry : names.entrySet()) {
+			String name = entry.getKey();
+			if (lowerCaseUsername.contains(name.toLowerCase())) {
+				if (bestName == null) {
+					bestName = name;
+					continue;
+				}
+				int frequency = entry.getValue();
+				String originalName = username.substring(
+						lowerCaseUsername.indexOf(name.toLowerCase()), 
+						lowerCaseUsername.indexOf(name.toLowerCase()) + name.length());
+				if (!originalName.substring(0, 1)
+						.equals(originalName.substring(0, 1).toLowerCase())) {
+					frequency = frequency * 5;
+				}
+				if (frequency > names.get(bestName)) {
+					bestName = name;
+				}
+			}
+		}
+		if (bestName == null) {
+			return username;
+		}
+		return bestName;
+	}
+
+	public static int getIndexOfNumber(String username, int check) {
+		check--;
+		try {
+			Integer.valueOf(username.substring(check, check + 1));
+		} catch (NumberFormatException e) {
+			if (check + 1 == username.length()) {
+				return -1;
+			}
+			return check + 1;
+		}
+		return getIndexOfNumber(username, check);
+	}
+
 	public static String replacePlaceholders(String message, MessageReceivedEvent event) {
 		User user = event.getAuthor();
 		if (message.contains("{user}")) {
@@ -88,8 +138,7 @@ public class MessageHandler {
 			message = message.replace("{message}", event.getMessage().getContentRaw());
 		}
 		if (message.contains("{real-name}")) {
-			message = message.replace("{real-name}", 
-					BotBoiServer.getInstance().getBestName(event.getAuthor().getName()));
+			message = message.replace("{real-name}", getBestName(event.getAuthor().getName()));
 		}
 		while (message.contains("{real-name-address}")) {
 			String sent = event.getMessage().getContentRaw();
@@ -97,8 +146,7 @@ public class MessageHandler {
 				return message;
 			}
 			sent = sent.substring(sent.indexOf(":") + 1, sent.length());
-			message = message.replace("{real-name-address}", 
-					BotBoiServer.getInstance().getBestName(sent));
+			message = message.replace("{real-name-address}", getBestName(sent));
 		}
 		if (message.contains("{online-count}")) {
 			Guild guild = event.getMessage().getGuild();
