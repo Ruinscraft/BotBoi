@@ -91,6 +91,15 @@ public class MessageHandler {
 			message = message.replace("{real-name}", 
 					BotBoiServer.getInstance().getBestName(event.getAuthor().getName()));
 		}
+		while (message.contains("{real-name-address}")) {
+			String sent = event.getMessage().getContentRaw();
+			if (!sent.contains("address:")) {
+				return message;
+			}
+			sent = sent.substring(sent.indexOf(":") + 1, sent.length());
+			message = message.replace("{real-name-address}", 
+					BotBoiServer.getInstance().getBestName(sent));
+		}
 		if (message.contains("{online-count}")) {
 			Guild guild = event.getMessage().getGuild();
 			int amountOnlineOrIdle = 0;

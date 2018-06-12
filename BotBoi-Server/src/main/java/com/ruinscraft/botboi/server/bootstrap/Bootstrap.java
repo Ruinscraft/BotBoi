@@ -50,6 +50,9 @@ public class Bootstrap {
 				name = name.replace(",M,", " ");
 				String frequency = name.substring(name.indexOf(" "), name.length());
 				name = name.replace(frequency, "");
+				if (name.length() < 3) {
+					continue;
+				}
 				frequency = frequency.replace(" ", "");
 				int frequencyInt = 0;
 				try {
@@ -57,6 +60,7 @@ public class Bootstrap {
 				} catch (NumberFormatException e) {
 					e.printStackTrace();
 				}
+				frequencyInt = (int) Math.pow(frequencyInt, name.length());
 				names.put(name, frequencyInt);
 			}
 		} catch (Exception e) {
