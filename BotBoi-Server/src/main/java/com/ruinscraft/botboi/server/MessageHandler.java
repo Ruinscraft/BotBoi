@@ -128,7 +128,11 @@ public class MessageHandler {
 	public static String replacePlaceholders(String message, MessageReceivedEvent event) {
 		User user = event.getAuthor();
 		if (message.contains("{user}")) {
-			message = message.replace("{user}", user.getName());
+			String name = user.getName();
+			if (name.toLowerCase().contains("botboi")) {
+				name = "name copier";
+			}
+			message = message.replace("{user}", name);
 		}
 		if (message.contains("{user-rank}")) {
 			message = message.replace("{user-rank}", 
@@ -138,7 +142,11 @@ public class MessageHandler {
 			message = message.replace("{message}", event.getMessage().getContentRaw());
 		}
 		if (message.contains("{real-name}")) {
-			message = message.replace("{real-name}", getBestName(event.getAuthor().getName()));
+			String realName = getBestName(user.getName());
+			if (user.getName().toLowerCase().contains("botboi")) {
+				realName = "name copier";
+			}
+			message = message.replace("{real-name}", realName);
 		}
 		while (message.contains("{real-name-address}")) {
 			String sent = event.getMessage().getContentRaw();
