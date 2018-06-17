@@ -3,7 +3,7 @@ package com.ruinscraft.botboi.storage;
 import java.util.List;
 import java.util.UUID;
 
-import com.ruinscraft.botboi.storage.MySqlStorage.TokenInfo;
+import com.ruinscraft.botboi.storage.TokenInfo;
 
 public interface Storage {
 

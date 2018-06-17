@@ -26,7 +26,7 @@ public class MySqlStorage implements SqlStorage {
 		update_token_set_waiting = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";
 		update_token_set_used = "UPDATE " + botboiTable + " SET used = ? WHERE token = ?;";
 		update_token_set_username = "UPDATE " + botboiTable + " SET mc_user = ? WHERE token = ?;";
-		query_waiting = "SELECT token, discord_id FROM " + botboiTable + " WHERE waiting = 1;";
+		query_waiting = "SELECT token, discord_id, mc_user FROM " + botboiTable + " WHERE waiting = 1;";
 		query_token = "SELECT * FROM " + botboiTable + " WHERE token = ?;";
 
 		try {
@@ -166,31 +166,6 @@ public class MySqlStorage implements SqlStorage {
 	public void close() {
 		dataSource.close();
 		dataSource = null;
-	}
-
-	public class TokenInfo {
-
-		private String token;
-		private String discord_id;
-		private String mc_user;
-
-		public TokenInfo(String token, String discord_id, String mc_user) {
-			this.token = token;
-			this.discord_id = discord_id;
-			this.mc_user = mc_user;
-		}
-
-		public String getToken() {
-			return token;
-		}
-
-		public String getDiscordId() {
-			return discord_id;
-		}
-
-		public String getMcUser() {
-			return mc_user;
-		}
 	}
 
 }

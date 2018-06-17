@@ -2,7 +2,7 @@ package com.ruinscraft.botboi.server;
 
 import java.util.TimerTask;
 
-import com.ruinscraft.botboi.storage.MySqlStorage.TokenInfo;
+import com.ruinscraft.botboi.storage.TokenInfo;
 
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
@@ -39,7 +39,7 @@ public class HandleUnverifiedTask extends TimerTask {
 				Member member = guild.getMember(user);
 				Role role = guild.getRoleById(memberRoleId);
 
-				guildController.setNickname(member, tokenInfo.getMcUser());
+				guildController.setNickname(member, tokenInfo.getMcUser()).queue();
 				guildController.addSingleRoleToMember(member, role).queue();
 
 				System.out.println("Verifying " + user.getName());
