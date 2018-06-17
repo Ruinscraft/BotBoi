@@ -9,28 +9,29 @@ import org.bukkit.entity.Player;
 public class DiscordCommand implements CommandExecutor {
 
 	private static final ChatColor MAIN_COLOR = ChatColor.BLUE;
-	
+
 	private String discordLink;
-	
+
 	public DiscordCommand(String discordLink) {
 		this.discordLink = discordLink;
 	}
-	
+
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (!(sender instanceof Player)) {
 			return false;
 		}
-		
+
 		Player player = (Player) sender;
-		
+
 		BotBoiPlugin.getInstance().getServer().getScheduler().runTaskAsynchronously(BotBoiPlugin.getInstance(), () -> {
 			if (args.length > 0) {
 				String token = args[0];
-				
+
 				if (!BotBoiPlugin.getInstance().getStorage().isUsed(token)) {
 					player.sendMessage(MAIN_COLOR + "Verified. You may now send messages on our Discord.");
-					
+
+					BotBoiPlugin.getInstance().getStorage().setUsername(token, player.getName());
 					BotBoiPlugin.getInstance().getStorage().setUsed(token, true);
 					BotBoiPlugin.getInstance().getStorage().setWaiting(token, true);
 				} else {
@@ -41,8 +42,8 @@ public class DiscordCommand implements CommandExecutor {
 				player.sendMessage(MAIN_COLOR + "Authenticate with /discord <key>");
 			}
 		});
-		
+
 		return true;
 	}
-	
+
 }

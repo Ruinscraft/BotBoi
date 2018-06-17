@@ -151,7 +151,7 @@ public class MessageHandler {
 		while (message.contains("{real-name-address}")) {
 			String sent = event.getMessage().getContentRaw();
 			if (!sent.contains("address:")) {
-				return message;
+				break;
 			}
 			sent = sent.substring(sent.indexOf(":") + 1, sent.length());
 			message = message.replace("{real-name-address}", getBestName(sent));

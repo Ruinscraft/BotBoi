@@ -1,7 +1,8 @@
 package com.ruinscraft.botboi.server;
 
-import java.util.Map;
 import java.util.TimerTask;
+
+import com.ruinscraft.botboi.storage.MySqlStorage.TokenInfo;
 
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
@@ -18,33 +19,34 @@ public class HandleUnverifiedTask extends TimerTask {
 
 	public HandleUnverifiedTask(BotBoiServer botBoiServer) {
 		String guildId = botBoiServer.getSettings().getProperty("discord.guildId");
-		
+
 		this.botBoiServer = botBoiServer;
 		this.guild = botBoiServer.getJDA().getGuildById(guildId);
 		this.guildController = new GuildController(guild);
-		
+
 		System.out.println("Guild: " + guild.getName() + " ID: " + guildId);
 	}
 
 	@Override
 	public void run() {
-		for (Map.Entry<String, String> waiting : botBoiServer.getStorage().getWaiting().entrySet()) {
+		for (TokenInfo tokenInfo : botBoiServer.getStorage().getWaiting()) {
 			String memberRoleId = botBoiServer.getSettings().getProperty("discord.memberRoleId");
 
-			botBoiServer.getStorage().setWaiting(waiting.getKey(), false);
-			
+			botBoiServer.getStorage().setWaiting(tokenInfo.getToken(), false);
+
 			try {
-				User user = botBoiServer.getJDA().getUserById(waiting.getValue());
+				User user = botBoiServer.getJDA().getUserById(tokenInfo.getDiscordId());
 				Member member = guild.getMember(user);
 				Role role = guild.getRoleById(memberRoleId);
 
+				guildController.setNickname(member, tokenInfo.getMcUser());
 				guildController.addSingleRoleToMember(member, role).queue();
 
 				System.out.println("Verifying " + user.getName());
 
 				user.openPrivateChannel().queue((channel) -> {
-		            channel.sendMessage(botBoiServer.getSettings().getProperty("messages.verified")).queue();
-		        });
+					channel.sendMessage(botBoiServer.getSettings().getProperty("messages.verified")).queue();
+				});
 			} catch (Exception e) {
 				System.out.println("Failed to add role to member... did they leave the guild?");
 				e.printStackTrace();
