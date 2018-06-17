@@ -5,9 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class MySqlStorage implements SqlStorage {
@@ -54,6 +52,7 @@ public class MySqlStorage implements SqlStorage {
 			System.out.println("Could not connect to the database. Check your connection settings.");
 		}
 	}
+
 
 	@Override
 	public boolean isSetup() {
@@ -117,9 +116,8 @@ public class MySqlStorage implements SqlStorage {
 		List<TokenInfo> tokenInfos = new ArrayList<>();
 
 		try (Connection c = getConnection();
-				PreparedStatement query = c.prepareStatement(query_waiting)) {
-			ResultSet rs = query.executeQuery();
-
+				PreparedStatement query = c.prepareStatement(query_waiting);
+				ResultSet rs = query.executeQuery()) {
 			while (rs.next()) {
 				tokenInfos.add(new TokenInfo(rs.getString("token"), 
 						rs.getString("discord_id"), rs.getString("mc_user")));
@@ -137,10 +135,10 @@ public class MySqlStorage implements SqlStorage {
 				PreparedStatement query = c.prepareStatement(query_token)) {
 			query.setString(1, token);
 
-			ResultSet rs = query.executeQuery();
-
-			while (rs.next()) {
-				return rs.getBoolean("used");
+			try (ResultSet rs = query.executeQuery()) {
+				while (rs.next()) {
+					return rs.getBoolean("used");
+				}
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();

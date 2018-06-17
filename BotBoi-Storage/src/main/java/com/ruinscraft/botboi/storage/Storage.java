@@ -8,7 +8,7 @@ import com.ruinscraft.botboi.storage.MySqlStorage.TokenInfo;
 public interface Storage {
 
 	boolean isSetup();
-
+	
 	void insertToken(String token, String discordId);
 
 	void setWaiting(String token, boolean waiting);
