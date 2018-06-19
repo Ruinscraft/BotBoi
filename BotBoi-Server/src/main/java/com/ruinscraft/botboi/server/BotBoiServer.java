@@ -117,6 +117,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		String message = event.getMessage().getContentRaw();
 		if (message.contains("!updatename")) {
 			sendWelcomeMessage(event.getAuthor(), "messages.updatename");
+			return;
 		}
 		if (message.contains("<@453668483528523776>")) {
 			if (event.getAuthor().getId().equals(jda.getSelfUser().getId())) {
