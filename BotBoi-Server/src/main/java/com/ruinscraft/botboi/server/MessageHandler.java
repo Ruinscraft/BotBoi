@@ -56,9 +56,15 @@ public class MessageHandler {
 		for (Entry<String, List<String>> entry : allMessages.entrySet()) {
 			String searchWord = entry.getKey();
 			List<String> messages = entry.getValue();
-			System.out.println("Adding '" + searchWord + 
-					"' search-word with " + messages.size() 
-					+ " messages");
+			if (messages.size() == 0) {
+				System.out.println("Could not add '" + searchWord + "': " + 
+						"search-word had no messages in its column.");
+				continue;
+			} else {
+				System.out.println("Adding '" + searchWord + 
+						"' search-word with " + messages.size() 
+						+ " messages");
+			}
 			List<String> newList = new ArrayList<>();
 			newList.addAll(entry.getValue());
 			addMessages(entry.getKey(), newList);
