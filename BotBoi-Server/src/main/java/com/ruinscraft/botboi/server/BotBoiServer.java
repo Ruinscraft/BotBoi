@@ -128,7 +128,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			response = MessageHandler.replacePlaceholders(response, event);
 			final String finalResponse = response;
 			event.getChannel().sendTyping().queue();
-			timer.schedule(new TimerTask() {
+			new Timer().schedule(new TimerTask() {
 				public void run() {
 					event.getChannel().sendMessage(finalResponse).queue();
 				}
