@@ -127,12 +127,17 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			String response = MessageHandler.getMessage(message);
 			response = MessageHandler.replacePlaceholders(response, event);
 			final String finalResponse = response;
-			event.getChannel().sendTyping().queue();
+
 			new Timer().schedule(new TimerTask() {
 				public void run() {
-					event.getChannel().sendMessage(finalResponse).queue();
+					event.getChannel().sendTyping().queue();
+					new Timer().schedule(new TimerTask() {
+						public void run() {
+							event.getChannel().sendMessage(finalResponse).queue();
+						}
+					}, (int) ((finalResponse.length() * 75) * (1 + Math.random())));
 				}
-			}, (int) ((finalResponse.length() * 110) * (1 + Math.random())));
+			}, (int) (Math.random() * 3000));
 		}
 	}
 
