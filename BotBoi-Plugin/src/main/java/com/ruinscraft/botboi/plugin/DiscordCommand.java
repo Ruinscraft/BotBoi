@@ -29,7 +29,7 @@ public class DiscordCommand implements CommandExecutor {
 				String token = args[0];
 
 				if (!BotBoiPlugin.getInstance().getStorage().isUsed(token)) {
-					player.sendMessage(MAIN_COLOR + "Verified. You may now send messages on our Discord.");
+					player.sendMessage(MAIN_COLOR + "Your key has been verified.");
 
 					BotBoiPlugin.getInstance().getStorage().setUsername(token, player.getName());
 					BotBoiPlugin.getInstance().getStorage().setUsed(token, true);
