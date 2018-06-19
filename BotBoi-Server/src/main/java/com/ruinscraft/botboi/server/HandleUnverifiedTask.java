@@ -39,6 +39,23 @@ public class HandleUnverifiedTask extends TimerTask {
 				Member member = guild.getMember(user);
 				Role role = guild.getRoleById(memberRoleId);
 
+				boolean done = false;
+				for (Role otherRole : member.getRoles()) {
+					if (otherRole.equals(role)) {
+						guildController.setNickname(member, tokenInfo.getMcUser()).queue();
+						System.out.println("Updating " + user.getName() + " to " + tokenInfo.getMcUser());
+
+						user.openPrivateChannel().queue((channel) -> {
+							channel.sendMessage(botBoiServer.getSettings()
+									.getProperty("messages.updatedname")).queue();
+						});
+						done = true;
+					}
+				}
+				if (done) {
+					continue;
+				}
+
 				guildController.setNickname(member, tokenInfo.getMcUser()).queue();
 				guildController.addSingleRoleToMember(member, role).queue();
 

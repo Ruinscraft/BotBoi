@@ -15,7 +15,6 @@ import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.Game;
-import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
@@ -98,23 +97,27 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	@Override
 	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-		Member guildMember = event.getMember();
-		User discordUser = guildMember.getUser();
+		sendWelcomeMessage(event.getUser(), "messages.welcome");
+	}
 
+	public void sendWelcomeMessage(User user, String message) {
 		String token = storage.generateToken();
 
-		String welcomeMessage = String.format(settings.getProperty("messages.welcome"), token);
+		String welcomeMessage = String.format(settings.getProperty(message), token);
 
-		discordUser.openPrivateChannel().queue((channel) -> {
+		user.openPrivateChannel().queue((channel) -> {
 			channel.sendMessage(welcomeMessage).queue();
 		});
 
-		storage.insertToken(token, discordUser.getId());
+		storage.insertToken(token, user.getId());
 	}
 
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
 		String message = event.getMessage().getContentRaw();
+		if (message.contains("!updatename")) {
+			sendWelcomeMessage(event.getAuthor(), "messages.updatename");
+		}
 		if (message.contains("<@453668483528523776>")) {
 			if (event.getAuthor().getId().equals(jda.getSelfUser().getId())) {
 				return;
