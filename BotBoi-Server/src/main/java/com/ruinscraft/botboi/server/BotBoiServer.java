@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import com.ruinscraft.botboi.storage.MySqlStorage;
@@ -124,11 +125,14 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 				return;
 			}
 			String response = MessageHandler.getMessage(message);
-			if (response == null) {
-				System.out.println("response null!");
-			}
 			response = MessageHandler.replacePlaceholders(response, event);
-			event.getChannel().sendMessage(response).queue();
+			final String finalResponse = response;
+			event.getChannel().sendTyping().queue();
+			timer.schedule(new TimerTask() {
+				public void run() {
+					event.getChannel().sendMessage(finalResponse).queue();
+				}
+			}, (int) ((finalResponse.length() * 110) * (1 + Math.random())));
 		}
 	}
 
