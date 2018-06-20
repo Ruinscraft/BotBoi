@@ -17,6 +17,9 @@ import com.ruinscraft.botboi.server.BotBoiServer;
 public class Bootstrap {
 
 	private static Scanner inputScanner = new Scanner(System.in);
+	private static long startTime = System.currentTimeMillis();
+	private static int usersConfirmed = 0;
+	private static int namesUpdated = 0;
 
 	public static void main(String[] args) {
 		// load the settings
@@ -82,9 +85,35 @@ public class Bootstrap {
 
 				if (input.equalsIgnoreCase("stop")) {
 					server.shutdown();
+				} else if (input.equalsIgnoreCase("uptime") || input.equalsIgnoreCase("gc")) {
+					long time = System.currentTimeMillis() - startTime;
+					String days = String.valueOf((time / 86400000));
+					String hours = String.valueOf(((time % 86400000) / 3600000));
+					String minutes = String.valueOf((((time % 86400000) % 3600000) / 60000));
+					String seconds = String.valueOf(((((time % 86400000) % 3600000) % 60000) / 1000));
+					if (hours.length() == 1) {
+						hours = "0" + hours;
+					}
+					if (minutes.length() == 1) {
+						minutes = "0" + minutes;
+					}
+					if (seconds.length() == 1) {
+						seconds = "0" + seconds;
+					}
+					System.out.println(days + "d " + hours + ":" + minutes + ":" + seconds);
+					System.out.println(usersConfirmed + " users confirmed, " 
+							+ namesUpdated + " names updated");
 				}
 			}
 		}).start();
+	}
+
+	public static void confirmUser() {
+		usersConfirmed++;
+	}
+
+	public static void updateName() {
+		namesUpdated++;
 	}
 
 }

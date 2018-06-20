@@ -2,6 +2,7 @@ package com.ruinscraft.botboi.server;
 
 import java.util.TimerTask;
 
+import com.ruinscraft.botboi.server.bootstrap.Bootstrap;
 import com.ruinscraft.botboi.storage.TokenInfo;
 
 import net.dv8tion.jda.core.entities.Guild;
@@ -49,6 +50,7 @@ public class HandleUnverifiedTask extends TimerTask {
 							channel.sendMessage(botBoiServer.getSettings()
 									.getProperty("messages.updatedname")).queue();
 						});
+						Bootstrap.updateName();
 						done = true;
 					}
 				}
@@ -64,6 +66,7 @@ public class HandleUnverifiedTask extends TimerTask {
 				user.openPrivateChannel().queue((channel) -> {
 					channel.sendMessage(botBoiServer.getSettings().getProperty("messages.verified")).queue();
 				});
+				Bootstrap.confirmUser();
 			} catch (Exception e) {
 				System.out.println("Failed to add role to member... did they leave the guild?");
 				e.printStackTrace();
