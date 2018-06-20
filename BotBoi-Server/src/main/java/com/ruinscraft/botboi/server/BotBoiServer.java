@@ -15,6 +15,7 @@ import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
+import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
@@ -116,6 +117,20 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
 		String message = event.getMessage().getContentRaw();
+		if (!FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
+			if (event.getChannelType() == ChannelType.TEXT) {
+				try {
+					event.getChannel().deleteMessageById(event.getMessageId()).queue();
+					String inappropriate = 
+							String.format(settings.getProperty("webpurify.inappropriate"), 
+									event.getMessage().getContentDisplay());
+					event.getAuthor().openPrivateChannel().queue((channel) -> {
+						channel.sendMessage(inappropriate).queue();
+					});
+				} catch (Exception e) { }
+			}
+			return;
+		}
 		if (message.contains("!updatename")) {
 			sendWelcomeMessage(event.getAuthor(), "messages.updatename");
 			return;
