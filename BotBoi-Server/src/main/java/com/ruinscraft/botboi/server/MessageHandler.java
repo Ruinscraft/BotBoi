@@ -18,7 +18,6 @@ import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
-import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 
 public class MessageHandler {
@@ -132,9 +131,12 @@ public class MessageHandler {
 	}
 
 	public static String replacePlaceholders(String message, MessageReceivedEvent event) {
-		User user = event.getAuthor();
+		Member member = event.getMember();
 		if (message.contains("{user}")) {
-			String name = user.getName();
+			String name = member.getNickname();
+			if (name == null) {
+				name = member.getUser().getName();
+			}
 			if (name.toLowerCase().contains("botboi")) {
 				name = "name copier";
 			}
@@ -142,14 +144,18 @@ public class MessageHandler {
 		}
 		if (message.contains("{user-rank}")) {
 			message = message.replace("{user-rank}", 
-					getBestRole(event.getMessage().getGuild().getMember(user)).getName());
+					getBestRole(member).getName());
 		}
 		if (message.contains("{message}")) {
 			message = message.replace("{message}", event.getMessage().getContentRaw());
 		}
 		if (message.contains("{real-name}")) {
-			String realName = getBestName(user.getName());
-			if (user.getName().toLowerCase().contains("botboi")) {
+			String name = member.getNickname();
+			if (name == null) {
+				name = member.getUser().getName();
+			}
+			String realName = getBestName(name);
+			if (name.toLowerCase().contains("botboi")) {
 				realName = "name copier";
 			}
 			message = message.replace("{real-name}", realName);
@@ -165,9 +171,9 @@ public class MessageHandler {
 		if (message.contains("{online-count}")) {
 			Guild guild = event.getMessage().getGuild();
 			int amountOnlineOrIdle = 0;
-			for (Member member : guild.getMembers()) {
-				if (member.getOnlineStatus().equals(OnlineStatus.ONLINE) ||
-						member.getOnlineStatus().equals(OnlineStatus.IDLE)) {
+			for (Member otherMember : guild.getMembers()) {
+				if (otherMember.getOnlineStatus().equals(OnlineStatus.ONLINE) ||
+						otherMember.getOnlineStatus().equals(OnlineStatus.IDLE)) {
 					amountOnlineOrIdle++;
 				}
 			}
@@ -177,13 +183,13 @@ public class MessageHandler {
 			Guild guild = event.getMessage().getGuild();
 			Role botRole = getBestRole(guild.getMember(event.getJDA().getSelfUser()));
 			List<Member> staff = new ArrayList<>();
-			for (Member member : guild.getMembers()) {
-				if (!member.getOnlineStatus().equals(OnlineStatus.ONLINE) &&
-						!member.getOnlineStatus().equals(OnlineStatus.IDLE)) {
+			for (Member otherMember : guild.getMembers()) {
+				if (!otherMember.getOnlineStatus().equals(OnlineStatus.ONLINE) &&
+						!otherMember.getOnlineStatus().equals(OnlineStatus.IDLE)) {
 					continue;
 				}
-				if (getBestRole(member).compareTo(botRole) > 0) {
-					staff.add(member);
+				if (getBestRole(otherMember).compareTo(botRole) > 0) {
+					staff.add(otherMember);
 				}
 			}
 			Member chosen = staff.get((int) (Math.random() * (staff.size() - 1)));
