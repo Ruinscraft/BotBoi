@@ -17,9 +17,12 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.core.events.message.GenericMessageEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 public class BotBoiServer extends ListenerAdapter implements Runnable {
@@ -115,20 +118,34 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	}
 
 	@Override
+	public void onMessageUpdate(MessageUpdateEvent event) {
+		if (!FilterUtils.isAppropriate(event.getMessage().getContentRaw(), 
+				settings.getProperty("webpurify.key"))) {
+			resolveInappropriateMessage(event);
+		}
+	}
+
+	public void resolveInappropriateMessage(GenericMessageEvent event) {
+		Message message = event.getChannel().getMessageById(event.getMessageId())
+				.complete();
+		if (event.getChannelType() == ChannelType.TEXT) {
+			try {
+				event.getChannel().deleteMessageById(event.getMessageId()).queue();
+				String inappropriate = 
+						String.format(settings.getProperty("webpurify.inappropriate"), 
+								message.getContentDisplay());
+				message.getAuthor().openPrivateChannel().queue((channel) -> {
+					channel.sendMessage(inappropriate).queue();
+				});
+			} catch (Exception e) { }
+		}
+	}
+
+	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
 		String message = event.getMessage().getContentRaw();
 		if (!FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
-			if (event.getChannelType() == ChannelType.TEXT) {
-				try {
-					event.getChannel().deleteMessageById(event.getMessageId()).queue();
-					String inappropriate = 
-							String.format(settings.getProperty("webpurify.inappropriate"), 
-									event.getMessage().getContentDisplay());
-					event.getAuthor().openPrivateChannel().queue((channel) -> {
-						channel.sendMessage(inappropriate).queue();
-					});
-				} catch (Exception e) { }
-			}
+			resolveInappropriateMessage(event);
 			return;
 		}
 		if (message.contains("!updatename")) {
