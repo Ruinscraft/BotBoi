@@ -251,7 +251,9 @@ public class MessageHandler {
 			if (lookFor.equals("else")) {
 				continue;
 			}
-			if (sent.toLowerCase().contains(lookFor)) {
+			if (sent.toLowerCase().contains(lookFor) && 
+					(sent.toLowerCase().contains(" " + lookFor) 
+							|| sent.toLowerCase().contains(lookFor + " "))) {
 				return returnNewMessage(lookFor);
 			}
 		}
