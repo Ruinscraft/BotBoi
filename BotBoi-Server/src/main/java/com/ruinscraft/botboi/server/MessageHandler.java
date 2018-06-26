@@ -46,6 +46,7 @@ public class MessageHandler {
 		}
 		existingMessages = messages.get(searchWord);
 		existingMessages.addAll(messagesSet);
+		Collections.shuffle(existingMessages);
 		messages.put(searchWord, existingMessages);
 	}
 

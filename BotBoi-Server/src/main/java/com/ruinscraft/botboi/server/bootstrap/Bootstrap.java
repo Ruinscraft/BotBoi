@@ -79,7 +79,7 @@ public class Bootstrap {
 			e.printStackTrace();
 		}
 
-		new Thread(()->{
+		new Thread(() -> {
 			while (inputScanner.hasNextLine()) {
 				String input = inputScanner.nextLine();
 
