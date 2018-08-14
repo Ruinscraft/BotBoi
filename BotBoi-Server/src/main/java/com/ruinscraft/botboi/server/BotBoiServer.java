@@ -87,17 +87,22 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return jda;
 	}
 
-	public List<String> getSearchWords() {
+	public List<SearchWord> getSearchWords() {
 		String wordsTogether = settings.getProperty("sheet.searchwords");
-		List<String> wordsSeparated = new ArrayList<>();
+		List<SearchWord> searchWords = new ArrayList<>();
+
 		while (wordsTogether.contains(";")) {
 			String word = wordsTogether.substring(0, wordsTogether.indexOf(";") + 1);
 			wordsTogether = wordsTogether.replace(word, "");
 			word = word.replace(";", "").toLowerCase();
-			wordsSeparated.add(word);
+
+			SearchWord searchWord = SearchWord.fromFormattedList(word);
+			searchWords.add(searchWord);
 		}
-		wordsSeparated.add(wordsTogether);
-		return wordsSeparated;
+
+		searchWords.add(SearchWord.fromFormattedList(wordsTogether));
+
+		return searchWords;
 	}
 
 	@Override

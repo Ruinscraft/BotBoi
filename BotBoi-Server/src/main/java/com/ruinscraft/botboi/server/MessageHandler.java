@@ -50,7 +50,7 @@ public class MessageHandler {
 		messages.put(searchWord, existingMessages);
 	}
 
-	public static void loadEntries(List<String> entries) {
+	public static void loadEntries(Collection<SearchWord> entries) {
 		getMessagesFromGoogle(entries);
 
 		for (Entry<String, List<String>> entry : allMessages.entrySet()) {
@@ -218,11 +218,14 @@ public class MessageHandler {
 		return message;
 	}
 
-	public static void getMessagesFromGoogle(Collection<String> lookFors) {
+	public static void getMessagesFromGoogle(Collection<SearchWord> lookFors) {
 		SpreadsheetService service = new SpreadsheetService("Sheet1");
 
-		for (String lookFor : lookFors) {
-			allMessages.put(lookFor, new ArrayList<>());
+		for (SearchWord lookFor : lookFors) {
+			allMessages.put(lookFor.getSearchWord(), new ArrayList<>());
+			for (String synonym : lookFor.getSynonyms()) {
+				allMessages.put(synonym, new ArrayList<>());
+			}
 		}
 
 		try {
@@ -232,13 +235,16 @@ public class MessageHandler {
 			ListFeed lf = service.getFeed(url, ListFeed.class);
 			for (ListEntry le : lf.getEntries()) {
 				CustomElementCollection cec = le.getCustomElements();
-				for (String lookFor : lookFors) {
-					String removedSpaces = lookFor.replace(" ", "");
+				for (SearchWord lookFor : lookFors) {
+					String removedSpaces = lookFor.getSearchWord().replace(" ", "");
 					String message = cec.getValue(removedSpaces);
 					if (message == null) {
 						continue;
 					}
-					allMessages.get(lookFor).add(message);
+					allMessages.get(lookFor.getSearchWord()).add(message);
+					for (String synonym : lookFor.getSynonyms()) {
+						allMessages.get(synonym).add(message);
+					}
 				}
 			}
 		} catch (Exception e) {
