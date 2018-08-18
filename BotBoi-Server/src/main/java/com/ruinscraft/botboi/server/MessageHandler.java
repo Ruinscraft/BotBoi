@@ -254,6 +254,7 @@ public class MessageHandler {
 
 	public static String getMessage(String sent) {
 		String longest = "";
+
 		for (Entry<String, List<String>> entry : messages.entrySet()) {
 			String lookFor = entry.getKey();
 			if (lookFor.equals("else")) {
@@ -265,18 +266,40 @@ public class MessageHandler {
 				}
 			}
 		}
+
 		if (longest.equals("")) return returnNewMessage("else");
+
 		return returnNewMessage(longest);
 	}
 
 	public static boolean messageContainsWord(String searchWord, String originalMessage) {
 		String message = originalMessage.toLowerCase().replace("'", "");
 		String word = searchWord.toLowerCase().replace("'", "");
+
 		if (!message.contains(word)) return false;
 		if (!message.contains(" " + word) &&
 				!message.contains(">" + word) &&
 				!message.contains(word + " ") &&
 				!message.contains(word + "<")) return false;
+
+		int msgIndex = message.indexOf(word);
+
+		String wordPlusOne = word;
+		String wordMinusOne = word;
+		if (msgIndex + word.length() + 1 < message.length()) {
+			wordPlusOne = message.substring(msgIndex, msgIndex + word.length() + 1);
+		}
+		if (msgIndex - 1 >= 0) {
+			wordMinusOne = message.substring(msgIndex - 1, msgIndex + word.length());
+		}
+
+		if (!wordPlusOne.equals(word + " ") && 
+				!wordPlusOne.equals(word) && 
+				!wordPlusOne.equals(word + "<")) return false;
+		if (!wordMinusOne.equals(" " + word) && 
+				!wordMinusOne.equals(">" + word) && 
+				!wordMinusOne.equals(word)) return false;
+
 		return true;
 	}
 
