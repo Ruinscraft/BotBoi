@@ -253,18 +253,31 @@ public class MessageHandler {
 	}
 
 	public static String getMessage(String sent) {
+		String longest = "";
 		for (Entry<String, List<String>> entry : messages.entrySet()) {
 			String lookFor = entry.getKey();
 			if (lookFor.equals("else")) {
 				continue;
 			}
-			if (sent.toLowerCase().contains(lookFor) && 
-					(sent.toLowerCase().contains(" " + lookFor) 
-							|| sent.toLowerCase().contains(lookFor + " "))) {
-				return returnNewMessage(lookFor);
+			if (messageContainsWord(lookFor, sent)) {
+				if (lookFor.length() > longest.length()) {
+					longest = lookFor;
+				}
 			}
 		}
-		return returnNewMessage("else");
+		if (longest.equals("")) return returnNewMessage("else");
+		return returnNewMessage(longest);
+	}
+
+	public static boolean messageContainsWord(String searchWord, String originalMessage) {
+		String message = originalMessage.toLowerCase().replace("'", "");
+		String word = searchWord.toLowerCase().replace("'", "");
+		if (!message.contains(word)) return false;
+		if (!message.contains(" " + word) &&
+				!message.contains(">" + word) &&
+				!message.contains(word + " ") &&
+				!message.contains(word + "<")) return false;
+		return true;
 	}
 
 	private static String returnNewMessage(String lookFor) {

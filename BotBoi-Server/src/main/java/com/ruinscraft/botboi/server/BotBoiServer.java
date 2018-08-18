@@ -161,6 +161,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			if (event.getAuthor().getId().equals(jda.getSelfUser().getId())) {
 				return;
 			}
+			if (event.getGuild() == null) return;
 			String response = MessageHandler.getMessage(message);
 			response = MessageHandler.replacePlaceholders(response, event);
 			final String finalResponse = response;
