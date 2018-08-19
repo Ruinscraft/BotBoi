@@ -1,5 +1,7 @@
 package com.ruinscraft.botboi.server;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,7 @@ import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.core.events.message.GenericMessageEvent;
@@ -35,6 +38,12 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	private final Timer timer;
 
 	private static BotBoiServer instance;
+
+	private long startTime = System.currentTimeMillis();
+	private int usersConfirmed = 0;
+	private int namesUpdated = 0;
+	private int messagesChecked = 0;
+	private int messagesSent = 0;
 
 	public static BotBoiServer getInstance() {
 		return instance;
@@ -59,7 +68,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	}
 
 	public synchronized void shutdown() {
-		System.out.println("Shutting down...");
+		log("Shutting down...");
 
 		try {
 			storage.close();
@@ -69,6 +78,28 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		}
 
 		System.exit(0);
+	}
+
+	public void reportStats() {
+		long time = System.currentTimeMillis() - startTime;
+		String days = String.valueOf((time / 86400000));
+		String hours = String.valueOf(((time % 86400000) / 3600000));
+		String minutes = String.valueOf((((time % 86400000) % 3600000) / 60000));
+		String seconds = String.valueOf(((((time % 86400000) % 3600000) % 60000) / 1000));
+		if (hours.length() == 1) {
+			hours = "0" + hours;
+		}
+		if (minutes.length() == 1) {
+			minutes = "0" + minutes;
+		}
+		if (seconds.length() == 1) {
+			seconds = "0" + seconds;
+		}
+		System.out.println("Uptime: " + days + "d " + hours + ":" + minutes + ":" + seconds);
+		System.out.println("Users confirmed: " + usersConfirmed);
+		System.out.println("Names updated: " + namesUpdated);
+		System.out.println("Inappropriate messages received: " + messagesChecked);
+		System.out.println("Messages sent: " + messagesSent);
 	}
 
 	public Properties getSettings() {
@@ -105,6 +136,10 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return searchWords;
 	}
 
+	public boolean senderIsSelf(User user) {
+		return user.getId().equals(jda.getSelfUser().getId());
+	}
+
 	@Override
 	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
 		sendWelcomeMessage(event.getUser(), "messages.welcome");
@@ -124,6 +159,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	@Override
 	public void onMessageUpdate(MessageUpdateEvent event) {
+		if (senderIsSelf(event.getAuthor())) return;
 		if (!FilterUtils.isAppropriate(event.getMessage().getContentRaw(), 
 				settings.getProperty("webpurify.key"))) {
 			resolveInappropriateMessage(event);
@@ -133,6 +169,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	public void resolveInappropriateMessage(GenericMessageEvent event) {
 		Message message = event.getChannel().getMessageById(event.getMessageId())
 				.complete();
+		checkMessage(message);
 		if (event.getChannelType() == ChannelType.TEXT) {
 			try {
 				event.getChannel().deleteMessageById(event.getMessageId()).queue();
@@ -140,6 +177,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 						String.format(settings.getProperty("webpurify.inappropriate"), 
 								message.getContentDisplay());
 				message.getAuthor().openPrivateChannel().queue((channel) -> {
+					sendMessage(channel, inappropriate);
 					channel.sendMessage(inappropriate).queue();
 				});
 			} catch (Exception e) { }
@@ -148,30 +186,34 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
+		if (senderIsSelf(event.getAuthor())) return;
 		String message = event.getMessage().getContentRaw();
+
 		if (!FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
 			resolveInappropriateMessage(event);
 			return;
 		}
+
 		if (message.contains("!updatename")) {
 			sendWelcomeMessage(event.getAuthor(), "messages.updatename");
 			return;
 		}
+
 		if (message.contains("<@453668483528523776>")) {
-			if (event.getAuthor().getId().equals(jda.getSelfUser().getId())) {
-				return;
-			}
 			if (event.getGuild() == null) return;
 			String response = MessageHandler.getMessage(message);
 			response = MessageHandler.replacePlaceholders(response, event);
 			final String finalResponse = response;
 
+			MessageChannel channel = event.getChannel();
+
 			new Timer().schedule(new TimerTask() {
 				public void run() {
-					event.getChannel().sendTyping().queue();
+					channel.sendTyping().queue();
 					new Timer().schedule(new TimerTask() {
 						public void run() {
-							event.getChannel().sendMessage(finalResponse).queue();
+							sendMessage(channel, finalResponse);
+							channel.sendMessage(finalResponse).queue();
 						}
 					}, (int) ((finalResponse.length() * 75) * (1 + Math.random())));
 				}
@@ -184,7 +226,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		try {
 			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildBlocking();
 		} catch (Exception e) {
-			System.out.println("Could not authenticate with Discord.");
+			log("Could not authenticate with Discord.");
 			return;
 		}
 
@@ -197,6 +239,45 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
 
 		timer.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, TimeUnit.SECONDS.toMillis(5));
+	}
+
+	public void log(String message) {
+		String dateAndTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+		dateAndTime = dateAndTime.replace("T", " ");
+		if (dateAndTime.contains(".")) dateAndTime = dateAndTime.substring(0, dateAndTime.indexOf("."));
+		String prefix = "[LOG " + dateAndTime + "] ";
+		System.out.println(prefix + message);
+	}
+
+	public void confirmUser(String user) {
+		log("Successfully verified " + user);
+		usersConfirmed++;
+	}
+
+	public void updateName(String oldName, String newName) {
+		log("Updated " + oldName + " to " + newName);
+		namesUpdated++;
+	}
+
+	public void checkMessage(Message message) {
+		String channel = "[" + message.getChannel().getName() + "]";
+		String user = "[" + message.getAuthor().getName() + "]";
+		String omittedMessage = message.getContentDisplay();
+		if (omittedMessage.length() > 300) {
+			omittedMessage = omittedMessage.substring(0, 300) + "   [...]";
+		}
+		log("Filtered for inappropriate language: " + channel + " " + user + " " + omittedMessage);
+		messagesChecked++;
+	}
+
+	public void sendMessage(MessageChannel channel, String message) {
+		String channelName = "[" + channel.getName() + "]";
+		String omittedMessage = message;
+		if (omittedMessage.length() > 300) {
+			omittedMessage = omittedMessage.substring(0, 300) + "   [...]";
+		}
+		log(channelName + " " + omittedMessage);
+		messagesSent++;
 	}
 
 }

@@ -2,7 +2,6 @@ package com.ruinscraft.botboi.server;
 
 import java.util.TimerTask;
 
-import com.ruinscraft.botboi.server.bootstrap.Bootstrap;
 import com.ruinscraft.botboi.storage.TokenInfo;
 
 import net.dv8tion.jda.core.entities.Guild;
@@ -25,7 +24,7 @@ public class HandleUnverifiedTask extends TimerTask {
 		this.guild = botBoiServer.getJDA().getGuildById(guildId);
 		this.guildController = new GuildController(guild);
 
-		System.out.println("Guild: " + guild.getName() + " ID: " + guildId);
+		botBoiServer.log("Guild: " + guild.getName() + " ID: " + guildId);
 	}
 
 	@Override
@@ -43,14 +42,16 @@ public class HandleUnverifiedTask extends TimerTask {
 				boolean done = false;
 				for (Role otherRole : member.getRoles()) {
 					if (otherRole.equals(role)) {
+						String oldName = member.getEffectiveName();
 						guildController.setNickname(member, tokenInfo.getMcUser()).queue();
-						System.out.println("Updating " + user.getName() + " to " + tokenInfo.getMcUser());
 
 						user.openPrivateChannel().queue((channel) -> {
-							channel.sendMessage(botBoiServer.getSettings()
-									.getProperty("messages.updatedname")).queue();
+							String message = botBoiServer.getSettings()
+									.getProperty("messages.updatedname");
+							BotBoiServer.getInstance().sendMessage(channel, message);
+							channel.sendMessage(message).queue();
 						});
-						Bootstrap.updateName();
+						BotBoiServer.getInstance().updateName(oldName, tokenInfo.getMcUser());
 						done = true;
 					}
 				}
@@ -61,14 +62,14 @@ public class HandleUnverifiedTask extends TimerTask {
 				guildController.setNickname(member, tokenInfo.getMcUser()).queue();
 				guildController.addSingleRoleToMember(member, role).queue();
 
-				System.out.println("Verifying " + user.getName());
-
 				user.openPrivateChannel().queue((channel) -> {
-					channel.sendMessage(botBoiServer.getSettings().getProperty("messages.verified")).queue();
+					String verified = botBoiServer.getSettings().getProperty("messages.verified");
+					BotBoiServer.getInstance().sendMessage(channel, verified);
+					channel.sendMessage(verified).queue();
 				});
-				Bootstrap.confirmUser();
+				BotBoiServer.getInstance().confirmUser(member.getEffectiveName());
 			} catch (Exception e) {
-				System.out.println("Failed to add role to member... did they leave the guild?");
+				BotBoiServer.getInstance().log("Failed to add role to member... did they leave the guild?");
 				e.printStackTrace();
 			}
 		}
