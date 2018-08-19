@@ -1,7 +1,5 @@
 package com.ruinscraft.botboi.server;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +8,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import com.ruinscraft.botboi.server.util.FilterUtils;
+import com.ruinscraft.botboi.server.util.LoggerPrintStream;
+import com.ruinscraft.botboi.server.util.MessageHandler;
 import com.ruinscraft.botboi.storage.MySqlStorage;
 import com.ruinscraft.botboi.storage.Storage;
 
@@ -51,6 +52,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	public BotBoiServer(Properties settings, Map<String, Integer> names) {
 		instance = this;
+
+		System.setOut(new LoggerPrintStream(System.out));
 
 		this.timer = new Timer();
 
@@ -151,7 +154,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		String welcomeMessage = String.format(settings.getProperty(message), token);
 
 		user.openPrivateChannel().queue((channel) -> {
-			sendMessage(channel, welcomeMessage);
+			logSendMessage(channel, welcomeMessage);
 			channel.sendMessage(welcomeMessage).queue();
 		});
 
@@ -170,7 +173,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	public void resolveInappropriateMessage(GenericMessageEvent event) {
 		Message message = event.getChannel().getMessageById(event.getMessageId())
 				.complete();
-		checkMessage(message);
+		logCheckMessage(message);
 		if (event.getChannelType() == ChannelType.TEXT) {
 			try {
 				event.getChannel().deleteMessageById(event.getMessageId()).queue();
@@ -178,7 +181,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 						String.format(settings.getProperty("webpurify.inappropriate"), 
 								message.getContentDisplay());
 				message.getAuthor().openPrivateChannel().queue((channel) -> {
-					sendMessage(channel, inappropriate);
+					logSendMessage(channel, inappropriate);
 					channel.sendMessage(inappropriate).queue();
 				});
 			} catch (Exception e) { }
@@ -190,7 +193,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		if (senderIsSelf(event.getAuthor())) return;
 		String message = event.getMessage().getContentRaw();
 
-		if (!FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
+		if (event.getGuild() != null && !FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
 			resolveInappropriateMessage(event);
 			return;
 		}
@@ -213,7 +216,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 					channel.sendTyping().queue();
 					new Timer().schedule(new TimerTask() {
 						public void run() {
-							sendMessage(channel, finalResponse);
+							logSendMessage(channel, finalResponse);
 							channel.sendMessage(finalResponse).queue();
 						}
 					}, (int) ((finalResponse.length() * 75) * (1 + Math.random())));
@@ -243,29 +246,25 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	}
 
 	public void log(String message) {
-		String dateAndTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-		dateAndTime = dateAndTime.replace("T", " ");
-		if (dateAndTime.contains(".")) dateAndTime = dateAndTime.substring(0, dateAndTime.indexOf("."));
-		String prefix = "[LOG " + dateAndTime + "] ";
-		System.out.println(prefix + message);
+		System.out.println(message);
 	}
 
-	public void confirmUser(String user) {
+	public void logConfirmUser(String user) {
 		log("Successfully verified " + user);
 		usersConfirmed++;
 	}
 
-	public void updateName(String oldName, String newName) {
+	public void logUpdateName(String oldName, String newName) {
 		log("Updated " + oldName + " to " + newName);
 		namesUpdated++;
 	}
 
-	public void checkMessage(Message message) {
+	public void logCheckMessage(Message message) {
 		String channelName = message.getChannel().getName();
 		if (message.getChannelType().equals(ChannelType.TEXT)) channelName = "#" + channelName;
 		if (message.getChannelType().equals(ChannelType.PRIVATE)) channelName = "@" + channelName;
 		String channel = "[" + channelName + "]";
-		String user = "[" + message.getAuthor().getName() + "]";
+		String user = "[@" + message.getAuthor().getName() + "]";
 		String omittedMessage = message.getContentDisplay();
 		if (omittedMessage.length() > 300) {
 			omittedMessage = omittedMessage.substring(0, 300) + "   [...]";
@@ -274,7 +273,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		messagesChecked++;
 	}
 
-	public void sendMessage(MessageChannel channel, String message) {
+	public void logSendMessage(MessageChannel channel, String message) {
 		String channelName = channel.getName();
 		if (channel.getType().equals(ChannelType.TEXT)) channelName = "#" + channelName;
 		if (channel.getType().equals(ChannelType.PRIVATE)) channelName = "@" + channelName;

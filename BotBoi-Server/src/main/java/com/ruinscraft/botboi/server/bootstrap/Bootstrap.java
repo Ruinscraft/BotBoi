@@ -46,7 +46,6 @@ public class Bootstrap {
 			settings.store(new FileOutputStream("server.properties"), null);
 
 			names = collectNames();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

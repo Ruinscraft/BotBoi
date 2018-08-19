@@ -1,8 +1,9 @@
-package com.ruinscraft.botboi.server;
+package com.ruinscraft.botboi.server.util;
 
 import org.json.JSONObject;
 
 import com.google.common.base.CharMatcher;
+import com.ruinscraft.botboi.server.BotBoiServer;
 
 public class FilterUtils {
 

@@ -1,4 +1,4 @@
-package com.ruinscraft.botboi.server;
+package com.ruinscraft.botboi.server.util;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

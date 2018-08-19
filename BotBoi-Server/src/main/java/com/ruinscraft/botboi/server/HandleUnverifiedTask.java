@@ -48,10 +48,10 @@ public class HandleUnverifiedTask extends TimerTask {
 						user.openPrivateChannel().queue((channel) -> {
 							String message = botBoiServer.getSettings()
 									.getProperty("messages.updatedname");
-							BotBoiServer.getInstance().sendMessage(channel, message);
+							BotBoiServer.getInstance().logSendMessage(channel, message);
 							channel.sendMessage(message).queue();
 						});
-						BotBoiServer.getInstance().updateName(oldName, tokenInfo.getMcUser());
+						BotBoiServer.getInstance().logUpdateName(oldName, tokenInfo.getMcUser());
 						done = true;
 					}
 				}
@@ -64,10 +64,10 @@ public class HandleUnverifiedTask extends TimerTask {
 
 				user.openPrivateChannel().queue((channel) -> {
 					String verified = botBoiServer.getSettings().getProperty("messages.verified");
-					BotBoiServer.getInstance().sendMessage(channel, verified);
+					BotBoiServer.getInstance().logSendMessage(channel, verified);
 					channel.sendMessage(verified).queue();
 				});
-				BotBoiServer.getInstance().confirmUser(member.getEffectiveName());
+				BotBoiServer.getInstance().logConfirmUser(member.getEffectiveName());
 			} catch (Exception e) {
 				BotBoiServer.getInstance().log("Failed to add role to member... did they leave the guild?");
 				e.printStackTrace();

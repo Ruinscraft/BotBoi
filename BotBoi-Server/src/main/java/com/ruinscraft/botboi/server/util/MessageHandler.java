@@ -1,4 +1,4 @@
-package com.ruinscraft.botboi.server;
+package com.ruinscraft.botboi.server.util;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -13,6 +13,8 @@ import com.google.gdata.client.spreadsheet.SpreadsheetService;
 import com.google.gdata.data.spreadsheet.CustomElementCollection;
 import com.google.gdata.data.spreadsheet.ListEntry;
 import com.google.gdata.data.spreadsheet.ListFeed;
+import com.ruinscraft.botboi.server.BotBoiServer;
+import com.ruinscraft.botboi.server.SearchWord;
 
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.Guild;
