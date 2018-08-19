@@ -95,7 +95,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		if (seconds.length() == 1) {
 			seconds = "0" + seconds;
 		}
-		System.out.println("Uptime: " + days + "d " + hours + ":" + minutes + ":" + seconds);
+		log("Uptime: " + days + "d " + hours + ":" + minutes + ":" + seconds);
 		System.out.println("Users confirmed: " + usersConfirmed);
 		System.out.println("Names updated: " + namesUpdated);
 		System.out.println("Inappropriate messages received: " + messagesChecked);
@@ -151,6 +151,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		String welcomeMessage = String.format(settings.getProperty(message), token);
 
 		user.openPrivateChannel().queue((channel) -> {
+			sendMessage(channel, welcomeMessage);
 			channel.sendMessage(welcomeMessage).queue();
 		});
 
@@ -260,7 +261,10 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	}
 
 	public void checkMessage(Message message) {
-		String channel = "[" + message.getChannel().getName() + "]";
+		String channelName = message.getChannel().getName();
+		if (message.getChannelType().equals(ChannelType.TEXT)) channelName = "#" + channelName;
+		if (message.getChannelType().equals(ChannelType.PRIVATE)) channelName = "@" + channelName;
+		String channel = "[" + channelName + "]";
 		String user = "[" + message.getAuthor().getName() + "]";
 		String omittedMessage = message.getContentDisplay();
 		if (omittedMessage.length() > 300) {
@@ -271,12 +275,15 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	}
 
 	public void sendMessage(MessageChannel channel, String message) {
-		String channelName = "[" + channel.getName() + "]";
+		String channelName = channel.getName();
+		if (channel.getType().equals(ChannelType.TEXT)) channelName = "#" + channelName;
+		if (channel.getType().equals(ChannelType.PRIVATE)) channelName = "@" + channelName;
+		String channelNameFull = "[" + channelName + "]";
 		String omittedMessage = message;
 		if (omittedMessage.length() > 300) {
 			omittedMessage = omittedMessage.substring(0, 300) + "   [...]";
 		}
-		log(channelName + " " + omittedMessage);
+		log(channelNameFull + " " + omittedMessage);
 		messagesSent++;
 	}
 
