@@ -21,12 +21,16 @@ public class LoggerPrintStream extends PrintStream {
 		log(string);
 	}
 
-	private void log(Object object) {
+	private String getTimePrefix() {
 		String dateAndTime = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 		dateAndTime = dateAndTime.replace("T", " ");
 		if (dateAndTime.contains(".")) dateAndTime = dateAndTime.substring(0, dateAndTime.indexOf("."));
 		String prefix = "[LOG " + dateAndTime + "] ";
-		super.println(prefix + object);
+		return prefix;
+	}
+
+	private void log(Object object) {
+		super.println(getTimePrefix() + object);
 	}
 
 }

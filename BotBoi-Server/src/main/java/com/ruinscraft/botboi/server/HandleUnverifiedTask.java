@@ -24,7 +24,7 @@ public class HandleUnverifiedTask extends TimerTask {
 		this.guild = botBoiServer.getJDA().getGuildById(guildId);
 		this.guildController = new GuildController(guild);
 
-		botBoiServer.log("Guild: " + guild.getName() + " ID: " + guildId);
+		System.out.println("Guild: " + guild.getName() + " ID: " + guildId);
 	}
 
 	@Override
@@ -69,7 +69,7 @@ public class HandleUnverifiedTask extends TimerTask {
 				});
 				BotBoiServer.getInstance().logConfirmUser(member.getEffectiveName());
 			} catch (Exception e) {
-				BotBoiServer.getInstance().log("Failed to add role to member... did they leave the guild?");
+				System.out.println("Failed to add role to member... did they leave the guild?");
 				e.printStackTrace();
 			}
 		}

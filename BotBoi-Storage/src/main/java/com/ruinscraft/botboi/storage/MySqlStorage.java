@@ -20,7 +20,8 @@ public class MySqlStorage implements SqlStorage {
 	private String query_waiting;
 	private String query_token;
 
-	public MySqlStorage(String host, int port, String database, String username, String password, String botboiTable) {
+	public MySqlStorage(String host, int port, String database, String username, 
+			String password, String botboiTable) {
 		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), mc_user VARCHAR(36), waiting BOOL DEFAULT 0, used BOOL DEFAULT 0, UNIQUE (token));";
 		insert_token = "INSERT INTO " + botboiTable + " (token, discord_id) VALUES (?, ?);";
 		update_token_set_waiting = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";

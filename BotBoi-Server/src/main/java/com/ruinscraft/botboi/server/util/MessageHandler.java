@@ -59,11 +59,11 @@ public class MessageHandler {
 			String searchWord = entry.getKey();
 			List<String> messages = entry.getValue();
 			if (messages.size() == 0) {
-				BotBoiServer.getInstance().log("Could not add '" + searchWord + "': " + 
+				System.out.println("Could not add '" + searchWord + "': " + 
 						"search-word had no messages in its column.");
 				continue;
 			} else {
-				BotBoiServer.getInstance().log("Adding '" + searchWord + 
+				System.out.println("Adding '" + searchWord + 
 						"' search-word with " + messages.size() 
 						+ " messages");
 			}

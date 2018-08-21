@@ -27,7 +27,7 @@ public class FilterUtils {
 			}
 			return true;
 		} catch (Exception e) {
-			BotBoiServer.getInstance().log("Error contacting webpurify.");
+			System.out.println("Error contacting webpurify.");
 		}
 		return true;
 	}

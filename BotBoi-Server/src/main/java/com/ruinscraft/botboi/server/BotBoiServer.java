@@ -71,7 +71,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	}
 
 	public synchronized void shutdown() {
-		log("Shutting down...");
+		System.out.println("Shutting down...");
 
 		try {
 			storage.close();
@@ -98,7 +98,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		if (seconds.length() == 1) {
 			seconds = "0" + seconds;
 		}
-		log("Uptime: " + days + "d " + hours + ":" + minutes + ":" + seconds);
+		System.out.println("Uptime: " + days + "d " + hours + ":" + minutes + ":" + seconds);
 		System.out.println("Users confirmed: " + usersConfirmed);
 		System.out.println("Names updated: " + namesUpdated);
 		System.out.println("Inappropriate messages received: " + messagesChecked);
@@ -174,6 +174,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		Message message = event.getChannel().getMessageById(event.getMessageId())
 				.complete();
 		logCheckMessage(message);
+
 		if (event.getChannelType() == ChannelType.TEXT) {
 			try {
 				event.getChannel().deleteMessageById(event.getMessageId()).queue();
@@ -230,7 +231,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		try {
 			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildBlocking();
 		} catch (Exception e) {
-			log("Could not authenticate with Discord.");
+			System.out.println("Could not authenticate with Discord.");
 			return;
 		}
 
@@ -245,17 +246,13 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		timer.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, TimeUnit.SECONDS.toMillis(5));
 	}
 
-	public void log(String message) {
-		System.out.println(message);
-	}
-
 	public void logConfirmUser(String user) {
-		log("Successfully verified " + user);
+		System.out.println("Successfully verified " + user);
 		usersConfirmed++;
 	}
 
 	public void logUpdateName(String oldName, String newName) {
-		log("Updated " + oldName + " to " + newName);
+		System.out.println("Updated " + oldName + " to " + newName);
 		namesUpdated++;
 	}
 
@@ -263,13 +260,16 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		String channelName = message.getChannel().getName();
 		if (message.getChannelType().equals(ChannelType.TEXT)) channelName = "#" + channelName;
 		if (message.getChannelType().equals(ChannelType.PRIVATE)) channelName = "@" + channelName;
+
 		String channel = "[" + channelName + "]";
 		String user = "[@" + message.getAuthor().getName() + "]";
+
 		String omittedMessage = message.getContentDisplay();
 		if (omittedMessage.length() > 300) {
 			omittedMessage = omittedMessage.substring(0, 300) + "   [...]";
 		}
-		log("Filtered for inappropriate language: " + channel + " " + user + " " + omittedMessage);
+
+		System.out.println("Filtered for inappropriate language: " + channel + " " + user + " " + omittedMessage);
 		messagesChecked++;
 	}
 
@@ -277,12 +277,15 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		String channelName = channel.getName();
 		if (channel.getType().equals(ChannelType.TEXT)) channelName = "#" + channelName;
 		if (channel.getType().equals(ChannelType.PRIVATE)) channelName = "@" + channelName;
+
 		String channelNameFull = "[" + channelName + "]";
+
 		String omittedMessage = message;
 		if (omittedMessage.length() > 300) {
 			omittedMessage = omittedMessage.substring(0, 300) + "   [...]";
 		}
-		log(channelNameFull + " " + omittedMessage);
+
+		System.out.println(channelNameFull + " " + omittedMessage);
 		messagesSent++;
 	}
 
