@@ -31,7 +31,7 @@ public class DiscordCommand implements CommandExecutor {
 				if (!BotBoiPlugin.getInstance().getStorage().isUsed(token)) {
 					player.sendMessage(MAIN_COLOR + "Your key has been verified.");
 
-					BotBoiPlugin.getInstance().getStorage().setUsername(token, player.getName());
+					BotBoiPlugin.getInstance().getStorage().setUUID(token, player.getUniqueId());
 					BotBoiPlugin.getInstance().getStorage().setUsed(token, true);
 					BotBoiPlugin.getInstance().getStorage().setWaiting(token, true);
 				} else {

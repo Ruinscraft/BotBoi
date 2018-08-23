@@ -1,15 +1,17 @@
 package com.ruinscraft.botboi.storage;
 
+import java.util.UUID;
+
 public class TokenInfo {
 
 	private String token;
 	private String discord_id;
-	private String mc_user;
+	private UUID uuid;
 
-	public TokenInfo(String token, String discord_id, String mc_user) {
+	public TokenInfo(String token, String discord_id, UUID uuid) {
 		this.token = token;
 		this.discord_id = discord_id;
-		this.mc_user = mc_user;
+		this.uuid = uuid;
 	}
 
 	public String getToken() {
@@ -20,8 +22,8 @@ public class TokenInfo {
 		return discord_id;
 	}
 
-	public String getMcUser() {
-		return mc_user;
+	public UUID getUUID() {
+		return uuid;
 	}
 
 }

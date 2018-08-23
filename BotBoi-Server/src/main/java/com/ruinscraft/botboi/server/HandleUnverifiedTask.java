@@ -1,5 +1,6 @@
 package com.ruinscraft.botboi.server;
 
+import java.util.Map.Entry;
 import java.util.TimerTask;
 
 import com.ruinscraft.botboi.storage.TokenInfo;
@@ -39,11 +40,13 @@ public class HandleUnverifiedTask extends TimerTask {
 				Member member = guild.getMember(user);
 				Role role = guild.getRoleById(memberRoleId);
 
+				String nickname = botBoiServer.getStorage().getUsername(tokenInfo.getUUID());
+
 				boolean done = false;
 				for (Role otherRole : member.getRoles()) {
 					if (otherRole.equals(role)) {
 						String oldName = member.getEffectiveName();
-						guildController.setNickname(member, tokenInfo.getMcUser()).queue();
+						guildController.setNickname(member, nickname).queue();
 
 						user.openPrivateChannel().queue((channel) -> {
 							String message = botBoiServer.getSettings()
@@ -51,7 +54,7 @@ public class HandleUnverifiedTask extends TimerTask {
 							BotBoiServer.getInstance().logSendMessage(channel, message);
 							channel.sendMessage(message).queue();
 						});
-						BotBoiServer.getInstance().logUpdateName(oldName, tokenInfo.getMcUser());
+						BotBoiServer.getInstance().logUpdateName(oldName, nickname);
 						done = true;
 					}
 				}
@@ -59,8 +62,14 @@ public class HandleUnverifiedTask extends TimerTask {
 					continue;
 				}
 
-				guildController.setNickname(member, tokenInfo.getMcUser()).queue();
+				guildController.setNickname(member, nickname).queue();
 				guildController.addSingleRoleToMember(member, role).queue();
+
+				for (Entry<String, Long> entry : botBoiServer.getPermissions().entrySet()) {
+					if (botBoiServer.getStorage().hasPermission(tokenInfo.getUUID(), entry.getKey())) {
+						guildController.addRolesToMember(member, guild.getRoleById(entry.getValue())).queue();
+					}
+				}
 
 				user.openPrivateChannel().queue((channel) -> {
 					String verified = botBoiServer.getSettings().getProperty("messages.verified");

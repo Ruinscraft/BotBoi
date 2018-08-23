@@ -1,6 +1,7 @@
 package com.ruinscraft.botboi.server;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -33,7 +34,9 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	private Properties settings;
 	private Storage storage;
+
 	private Map<String, Integer> names;
+	private Map<String, Long> permissions;
 
 	private JDA jda;
 	private final Timer timer;
@@ -59,13 +62,18 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 		this.settings = settings;
 		this.names = names;
+		this.permissions = loadPermissions(settings.getProperty("minecraft.permissions"));
+
 		this.storage = new MySqlStorage(
 				settings.getProperty("storage.mysql.host"),
 				Integer.parseInt(settings.getProperty("storage.mysql.port")),
 				settings.getProperty("storage.mysql.database"),
 				settings.getProperty("storage.mysql.username"),
 				settings.getProperty("storage.mysql.password"),
-				settings.getProperty("storage.mysql.table"));
+				settings.getProperty("storage.mysql.table"),
+				settings.getProperty("storage.mysql.luckperms.database"),
+				settings.getProperty("storage.mysql.luckperms.playertable"),
+				settings.getProperty("storage.mysql.luckperms.permtable"));
 
 		MessageHandler.loadEntries(getSearchWords());
 	}
@@ -115,6 +123,24 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	public Map<String, Integer> getNames() {
 		return names;
+	}
+
+	public Map<String, Long> getPermissions() {
+		return permissions;
+	}
+
+	private Map<String, Long> loadPermissions(String unformattedList) throws ArrayIndexOutOfBoundsException {
+		Map<String, Long> permissions = new HashMap<>();
+		String[] separatedPerms = unformattedList.split(";");
+		for (String separatedPerm : separatedPerms) {
+			String[] separatedPermAndRole = separatedPerm.split(",");
+			try {
+				permissions.put(separatedPermAndRole[0], Long.valueOf(separatedPermAndRole[1]));
+			} catch (ArrayIndexOutOfBoundsException e) {
+				throw new ArrayIndexOutOfBoundsException("Permissions were formatted incorrectly! perm,id;perm,id");
+			}
+		}
+		return permissions;
 	}
 
 	public JDA getJDA() {

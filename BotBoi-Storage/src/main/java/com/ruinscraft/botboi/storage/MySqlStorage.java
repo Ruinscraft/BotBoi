@@ -6,29 +6,38 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import com.zaxxer.hikari.HikariDataSource;
 
 public class MySqlStorage implements SqlStorage {
 
 	private HikariDataSource dataSource;
+	private HikariDataSource luckPermsDataSource;
 
 	private String create_table;
 	private String insert_token;
 	private String update_token_set_waiting;
 	private String update_token_set_used;
-	private String update_token_set_username;
+	private String update_token_set_uuid;
 	private String query_waiting;
 	private String query_token;
 
-	public MySqlStorage(String host, int port, String database, String username, 
-			String password, String botboiTable) {
-		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), mc_user VARCHAR(36), waiting BOOL DEFAULT 0, used BOOL DEFAULT 0, UNIQUE (token));";
+	public String luckperms_query_username;
+	public String luckperms_query_permission;
+
+	public MySqlStorage(String host, int port, String database, String username, String password, 
+			String botboiTable, String luckPermsDatabase, String luckPermsPlayerTable, String luckPermsPermTable) {
+		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), uuid VARCHAR(36), waiting BOOL DEFAULT 0, used BOOL DEFAULT 0, UNIQUE (token));";
 		insert_token = "INSERT INTO " + botboiTable + " (token, discord_id) VALUES (?, ?);";
 		update_token_set_waiting = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";
 		update_token_set_used = "UPDATE " + botboiTable + " SET used = ? WHERE token = ?;";
-		update_token_set_username = "UPDATE " + botboiTable + " SET mc_user = ? WHERE token = ?;";
-		query_waiting = "SELECT token, discord_id, mc_user FROM " + botboiTable + " WHERE waiting = 1;";
+		update_token_set_uuid = "UPDATE " + botboiTable + " SET uuid = ? WHERE token = ?;";
+		query_waiting = "SELECT token, discord_id, uuid FROM " + botboiTable + " WHERE waiting = 1;";
 		query_token = "SELECT * FROM " + botboiTable + " WHERE token = ?;";
+
+		luckperms_query_username = "SELECT username FROM " + luckPermsPlayerTable + " WHERE uuid = ?;";
+		luckperms_query_permission = "SELECT value FROM " + luckPermsPermTable + " WHERE uuid = ? AND permission = ?;";
 
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -37,7 +46,6 @@ public class MySqlStorage implements SqlStorage {
 		}
 
 		dataSource = new HikariDataSource();
-
 		dataSource.setDriverClassName("com.mysql.jdbc.Driver");
 		dataSource.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database);
 		dataSource.setUsername(username);
@@ -46,6 +54,17 @@ public class MySqlStorage implements SqlStorage {
 		dataSource.setMaximumPoolSize(3);
 		dataSource.setConnectionTimeout(3000);
 		dataSource.setLeakDetectionThreshold(3000);
+
+		luckPermsDataSource = new HikariDataSource();
+		luckPermsDataSource.setDriverClassName("com.mysql.jdbc.Driver");
+		luckPermsDataSource.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + luckPermsDatabase);
+		luckPermsDataSource.setUsername(username);
+		luckPermsDataSource.setPassword(password);
+		luckPermsDataSource.setPoolName("luckperms-read-pool");
+		luckPermsDataSource.setMaximumPoolSize(3);
+		luckPermsDataSource.setConnectionTimeout(3000);
+		luckPermsDataSource.setLeakDetectionThreshold(3000);
+		luckPermsDataSource.setReadOnly(true);
 
 		try {
 			createTable();
@@ -101,10 +120,10 @@ public class MySqlStorage implements SqlStorage {
 	}
 
 	@Override
-	public void setUsername(String token, String username) {
+	public void setUUID(String token, UUID uuid) {
 		try (Connection c = getConnection();
-				PreparedStatement update = c.prepareStatement(update_token_set_username)) {
-			update.setString(1, username);
+				PreparedStatement update = c.prepareStatement(update_token_set_uuid)) {
+			update.setString(1, uuid.toString());
 			update.setString(2, token);
 			update.executeUpdate();
 		} catch (SQLException e) {
@@ -121,7 +140,7 @@ public class MySqlStorage implements SqlStorage {
 				ResultSet rs = query.executeQuery()) {
 			while (rs.next()) {
 				tokenInfos.add(new TokenInfo(rs.getString("token"), 
-						rs.getString("discord_id"), rs.getString("mc_user")));
+						rs.getString("discord_id"), UUID.fromString(rs.getString("uuid"))));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -149,8 +168,50 @@ public class MySqlStorage implements SqlStorage {
 	}
 
 	@Override
+	public String getUsername(UUID uuid) {
+		try (Connection c = getLuckPermsConnection();
+				PreparedStatement query = c.prepareStatement(luckperms_query_username)) {
+			query.setString(1, uuid.toString());
+
+			try (ResultSet rs = query.executeQuery()) {
+				while (rs.next()) {
+					return rs.getString("username");
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	@Override
+	public boolean hasPermission(UUID uuid, String permission) {
+		try (Connection c = getLuckPermsConnection();
+				PreparedStatement query = c.prepareStatement(luckperms_query_permission)) {
+			query.setString(1, uuid.toString());
+			query.setString(2, permission);
+
+			try (ResultSet rs = query.executeQuery()) {
+				while (rs.next()) {
+					return rs.getBoolean("value");
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	@Override
 	public Connection getConnection() throws SQLException {
 		return dataSource.getConnection();
+	}
+
+	@Override
+	public Connection getLuckPermsConnection() throws SQLException {
+		return luckPermsDataSource.getConnection();
 	}
 
 	@Override
@@ -167,6 +228,9 @@ public class MySqlStorage implements SqlStorage {
 	public void close() {
 		dataSource.close();
 		dataSource = null;
+
+		luckPermsDataSource.close();
+		luckPermsDataSource = null;
 	}
 
 }
