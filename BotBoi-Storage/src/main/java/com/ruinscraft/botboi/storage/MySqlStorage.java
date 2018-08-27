@@ -5,7 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.zaxxer.hikari.HikariDataSource;
@@ -22,9 +24,11 @@ public class MySqlStorage implements SqlStorage {
 	private String update_token_set_uuid;
 	private String query_waiting;
 	private String query_token;
+	private String query_ids_and_uuids;
+	private String delete_user;
 
-	public String luckperms_query_username;
-	public String luckperms_query_permission;
+	private String luckperms_query_username;
+	private String luckperms_query_permission;
 
 	public MySqlStorage(String host, int port, String database, String username, String password, 
 			String botboiTable, String luckPermsDatabase, String luckPermsPlayerTable, String luckPermsPermTable) {
@@ -33,8 +37,10 @@ public class MySqlStorage implements SqlStorage {
 		update_token_set_waiting = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";
 		update_token_set_used = "UPDATE " + botboiTable + " SET used = ? WHERE token = ?;";
 		update_token_set_uuid = "UPDATE " + botboiTable + " SET uuid = ? WHERE token = ?;";
-		query_waiting = "SELECT token, discord_id, uuid FROM " + botboiTable + " WHERE waiting = 1;";
+		query_waiting = "SELECT token, discord_id, uuid FROM " + botboiTable + " WHERE waiting = 1 AND uuid IS NOT NULL;";
 		query_token = "SELECT * FROM " + botboiTable + " WHERE token = ?;";
+		query_ids_and_uuids = "SELECT discord_id, uuid FROM " + botboiTable + " WHERE uuid IS NOT NULL;";
+		delete_user = "DELETE FROM " + botboiTable + " WHERE discord_id = ?;";
 
 		luckperms_query_username = "SELECT username FROM " + luckPermsPlayerTable + " WHERE uuid = ?;";
 		luckperms_query_permission = "SELECT value FROM " + luckPermsPermTable + " WHERE uuid = ? AND permission = ?;";
@@ -147,6 +153,36 @@ public class MySqlStorage implements SqlStorage {
 		}
 
 		return tokenInfos;
+	}
+
+	@Override
+	public Map<String, UUID> getIDsWithUUIDs() {
+		Map<String, UUID> idsAndUUIDs = new HashMap<>();
+
+		try (Connection c = getConnection();
+				PreparedStatement query = c.prepareStatement(query_ids_and_uuids);
+				ResultSet rs = query.executeQuery()) {
+			
+			while (rs.next()) {
+				String uuidString = rs.getString("uuid");
+				idsAndUUIDs.put(rs.getString("discord_id"), UUID.fromString(uuidString));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return idsAndUUIDs;
+	}
+
+	@Override
+	public void deleteUser(String discordId) {
+		try (Connection c = getConnection();
+				PreparedStatement query = c.prepareStatement(delete_user)) {
+			query.setString(1, discordId);
+			query.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

@@ -25,6 +25,7 @@ import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.core.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.core.events.message.GenericMessageEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
@@ -138,6 +139,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 				permissions.put(separatedPermAndRole[0], Long.valueOf(separatedPermAndRole[1]));
 			} catch (ArrayIndexOutOfBoundsException e) {
 				throw new ArrayIndexOutOfBoundsException("Permissions were formatted incorrectly! perm,id;perm,id");
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 		return permissions;
@@ -172,6 +175,11 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	@Override
 	public void onGuildMemberJoin(GuildMemberJoinEvent event) {
 		sendWelcomeMessage(event.getUser(), "messages.welcome");
+	}
+
+	@Override
+	public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
+		getStorage().deleteUser(event.getUser().getId());
 	}
 
 	public void sendWelcomeMessage(User user, String message) {

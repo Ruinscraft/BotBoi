@@ -1,6 +1,7 @@
 package com.ruinscraft.botboi.storage;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.ruinscraft.botboi.storage.TokenInfo;
@@ -19,7 +20,11 @@ public interface Storage {
 
 	List<TokenInfo> getWaiting();
 
+	void deleteUser(String discordId);
+
 	boolean isUsed(String token);
+
+	Map<String, UUID> getIDsWithUUIDs();
 
 	String getUsername(UUID uuid);
 
