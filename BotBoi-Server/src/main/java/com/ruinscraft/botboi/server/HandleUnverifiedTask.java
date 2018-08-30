@@ -2,9 +2,12 @@ package com.ruinscraft.botboi.server;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -25,6 +28,8 @@ public class HandleUnverifiedTask extends TimerTask {
 	private final Guild guild;
 	private final GuildController guildController;
 
+	private Map<String, Role> permissions;
+
 	private Collection<String> recentIDs;
 
 	public HandleUnverifiedTask(BotBoiServer botBoiServer) {
@@ -34,6 +39,20 @@ public class HandleUnverifiedTask extends TimerTask {
 		this.guild = botBoiServer.getJDA().getGuildById(guildId);
 		this.guildController = new GuildController(guild);
 		this.recentIDs = new HashSet<>();
+
+		Map<String, Role> permissions = new HashMap<>();
+		String[] separatedPerms = botBoiServer.getSettings().getProperty("minecraft.permissions").split(";");
+		for (String separatedPerm : separatedPerms) {
+			String[] separatedPermAndRole = separatedPerm.split(",");
+			try {
+				permissions.put(separatedPermAndRole[0], guild.getRoleById(Long.valueOf(separatedPermAndRole[1])));
+			} catch (ArrayIndexOutOfBoundsException e) {
+				throw new ArrayIndexOutOfBoundsException("Permissions were formatted incorrectly! perm,id;perm,id");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		this.permissions = permissions;
 
 		System.out.println("Guild: " + guild.getName() + " ID: " + guildId);
 	}
@@ -77,7 +96,7 @@ public class HandleUnverifiedTask extends TimerTask {
 					public void run() {
 						recentIDs.remove(tokenInfo.getDiscordId());
 					}
-				}, 9000L);
+				}, 17000L);
 
 				guildController.setNickname(member, nickname).queue();
 				guildController.addSingleRoleToMember(member, role).queue();
@@ -111,20 +130,65 @@ public class HandleUnverifiedTask extends TimerTask {
 	}
 
 	private void updateMemberRoles(Member member, UUID uuid) {
-		List<Role> roles = new ArrayList<>();
+		Set<Role> roles = new HashSet<>();
 
-		for (Entry<String, Long> entry : botBoiServer.getPermissions().entrySet()) {
-			Role role = guild.getRoleById(entry.getValue());
+		for (Entry<String, Role> entry : this.permissions.entrySet()) {
+			String perm = entry.getKey();
+			Role role = entry.getValue();
 
-			if (botBoiServer.getStorage().hasPermission(uuid, entry.getKey()) && !member.getRoles().contains(role)) {
+			if (botBoiServer.getStorage().hasPermission(uuid, perm)) {
 				roles.add(role);
+			} else {
+				continue;
 			}
+
+			List<String> groupsToCheckLegacy = new ArrayList<>();
+			List<String> groupsToCheck = new ArrayList<>();
+			groupsToCheck.add(perm.replace("group.", ""));
+
+			while (true) {
+				int size = groupsToCheck.size();
+
+				for (int i = 0; i < groupsToCheck.size(); i++) {
+					String group = groupsToCheck.get(i);
+
+					for (String permission : botBoiServer.getStorage().getPermissionsFromGroup(group)) {
+						if (permission.contains("group.") && 
+								!groupsToCheck.contains(permission) && 
+								!groupsToCheckLegacy.contains(permission)) {
+							groupsToCheck.add(permission.replace("group.", ""));
+							if (this.permissions.containsKey(permission)) {
+								System.out.println("!!!!!!!!!! we got " + permission);
+								roles.add(this.permissions.get(permission));
+							}
+						}
+					}
+
+					groupsToCheck.remove(group);
+					groupsToCheckLegacy.add(group);
+					i--;
+				}
+
+				if (size == groupsToCheck.size()) break;
+			}
+
 		}
 
 		if (roles.isEmpty()) return;
 
 		List<String> roleNames = roles.stream().map(Role::getName).collect(Collectors.toList());
-		String joinedRoleNameList = String.join(",", roleNames);
+		String joinedRoleNameList = String.join(", ", roleNames);
+
+		List<String> updatedRoleNames = member.getRoles().stream().map(Role::getName).collect(Collectors.toList());
+		for (int i = 0; i < roleNames.size(); i++) {
+			String role = roleNames.get(i);
+			for (String otherRole : updatedRoleNames) {
+				if (role.equals(otherRole)) roleNames.remove(role);
+				i--;
+				break;
+			}
+		}
+		if (roleNames.isEmpty()) return;
 
 		member.getUser().openPrivateChannel().queue((channel) -> {
 			String roleAdded = String.format(

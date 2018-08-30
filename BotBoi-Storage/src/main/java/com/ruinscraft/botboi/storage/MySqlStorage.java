@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +30,12 @@ public class MySqlStorage implements SqlStorage {
 
 	private String luckperms_query_username;
 	private String luckperms_query_permission;
+	private String luckperms_query_group_permission;
+	private String luckperms_query_group_permission_list;
 
 	public MySqlStorage(String host, int port, String database, String username, String password, 
-			String botboiTable, String luckPermsDatabase, String luckPermsPlayerTable, String luckPermsPermTable) {
+			String botboiTable, String luckPermsDatabase, String luckPermsPlayerTable, 
+			String luckPermsPermTable, String luckPermsGroupPermTable) {
 		create_table = "CREATE TABLE IF NOT EXISTS " + botboiTable + " (token VARCHAR(36), discord_id VARCHAR(36), uuid VARCHAR(36), waiting BOOL DEFAULT 0, used BOOL DEFAULT 0, UNIQUE (token));";
 		insert_token = "INSERT INTO " + botboiTable + " (token, discord_id) VALUES (?, ?);";
 		update_token_set_waiting = "UPDATE " + botboiTable + " SET waiting = ? WHERE token = ?;";
@@ -44,6 +48,8 @@ public class MySqlStorage implements SqlStorage {
 
 		luckperms_query_username = "SELECT username FROM " + luckPermsPlayerTable + " WHERE uuid = ?;";
 		luckperms_query_permission = "SELECT value FROM " + luckPermsPermTable + " WHERE uuid = ? AND permission = ?;";
+		luckperms_query_group_permission = "SELECT value FROM " + luckPermsGroupPermTable + " WHERE name = ? AND permission = ?;";
+		luckperms_query_group_permission_list = "SELECT permission FROM " + luckPermsGroupPermTable + " WHERE name = ?;";
 
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -78,7 +84,6 @@ public class MySqlStorage implements SqlStorage {
 			System.out.println("Could not connect to the database. Check your connection settings.");
 		}
 	}
-
 
 	@Override
 	public boolean isSetup() {
@@ -238,6 +243,45 @@ public class MySqlStorage implements SqlStorage {
 		}
 
 		return false;
+	}
+
+	@Override
+	public boolean groupHasPermission(String group, String permission) {
+		try (Connection c = getLuckPermsConnection();
+				PreparedStatement query = c.prepareStatement(luckperms_query_group_permission)) {
+			query.setString(1, group);
+			query.setString(2, permission);
+
+			try (ResultSet rs = query.executeQuery()) {
+				while (rs.next()) {
+					return rs.getBoolean("value");
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	@Override
+	public Collection<String> getPermissionsFromGroup(String group) {
+		List<String> perms = new ArrayList<>();
+
+		try (Connection c = getLuckPermsConnection();
+				PreparedStatement query = c.prepareStatement(luckperms_query_group_permission_list)) {
+			query.setString(1, group);
+
+			try (ResultSet rs = query.executeQuery()) {
+				while (rs.next()) {
+					perms.add(rs.getString("permission"));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return perms;
 	}
 
 	@Override

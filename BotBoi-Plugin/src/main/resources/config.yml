@@ -8,3 +8,8 @@ storage:
     username: root
     password: password
     table: botboi_keys
+    luckperms:
+      database: luckperms
+      playertable: luckperms_players
+      permtable: luckperms_user_permissions
+      grouppermtable: luckperms_group_permissions

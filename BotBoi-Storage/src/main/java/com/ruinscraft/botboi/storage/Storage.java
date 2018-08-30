@@ -1,5 +1,6 @@
 package com.ruinscraft.botboi.storage;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +30,10 @@ public interface Storage {
 	String getUsername(UUID uuid);
 
 	boolean hasPermission(UUID uuid, String permission);
+
+	boolean groupHasPermission(String group, String permission);
+
+	Collection<String> getPermissionsFromGroup(String group);
 
 	void close();
 

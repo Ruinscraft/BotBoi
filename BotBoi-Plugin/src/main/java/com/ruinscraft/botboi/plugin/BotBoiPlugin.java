@@ -30,7 +30,8 @@ public class BotBoiPlugin extends JavaPlugin {
 				getConfig().getString("storage.mysql.table"),
 				getConfig().getString("storage.mysql.luckperms.database"),
 				getConfig().getString("storage.mysql.luckperms.playertable"),
-				getConfig().getString("storage.mysql.luckperms.permtable"));
+				getConfig().getString("storage.mysql.luckperms.permtable"),
+				getConfig().getString("storage.mysql.luckperms.grouppermtable"));
 
 		String discordLink = getConfig().getString("discord_link");
 
