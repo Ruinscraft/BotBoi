@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.ruinscraft.botboi.server.util.FilterUtils;
@@ -38,7 +40,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	private Map<String, Integer> names;
 
 	private JDA jda;
-	private final Timer timer;
+	private final ScheduledExecutorService scheduler;
 
 	private static BotBoiServer instance;
 
@@ -57,7 +59,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 		System.setOut(new LoggerPrintStream(System.out));
 
-		this.timer = new Timer();
+		this.scheduler = Executors.newSingleThreadScheduledExecutor();
 
 		this.settings = settings;
 		this.names = names;
@@ -255,7 +257,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		jda.getPresence().setStatus(OnlineStatus.ONLINE);
 		jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
 
-		timer.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, TimeUnit.SECONDS.toMillis(5));
+		scheduler.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, 5, TimeUnit.SECONDS);
 	}
 
 	public void logConfirmUser(String user) {
