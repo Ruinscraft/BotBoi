@@ -29,6 +29,8 @@ public interface Storage {
 
 	String getUsername(UUID uuid);
 
+	String getUsername(String discord_id);
+
 	boolean hasPermission(UUID uuid, String permission);
 
 	boolean groupHasPermission(String group, String permission);

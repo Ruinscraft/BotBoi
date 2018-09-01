@@ -22,6 +22,8 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Game;
+import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
@@ -40,6 +42,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	private Map<String, Integer> names;
 
 	private JDA jda;
+	private Guild guild;
 	private final ScheduledExecutorService scheduler;
 
 	private static BotBoiServer instance;
@@ -130,6 +133,10 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return jda;
 	}
 
+	public Guild getGuild() {
+		return guild;
+	}
+
 	public List<SearchWord> getSearchWords() {
 		String wordsTogether = settings.getProperty("sheet.searchwords");
 		List<SearchWord> searchWords = new ArrayList<>();
@@ -208,13 +215,51 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		if (senderIsSelf(event.getAuthor())) return;
 		String message = event.getMessage().getContentRaw();
 
-		if (event.getGuild() != null && !FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
+		if (event.getGuild() != null && 
+				!FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
 			resolveInappropriateMessage(event);
 			return;
 		}
 
 		if (message.contains("!updatename")) {
 			sendWelcomeMessage(event.getAuthor(), "messages.updatename");
+			return;
+		}
+
+		if (message.contains("!realname")) {
+			User user = event.getAuthor();
+
+			if (!message.contains("<") || !message.contains(">")) {
+				String unknown = settings.getProperty("messages.realname.unknown");
+				logSendMessage(event.getChannel(), unknown);
+				event.getChannel().sendMessage(unknown).queue();
+				return;
+			}
+
+			String userReferenced = message.substring(message.indexOf("<"), message.indexOf(">"));
+			userReferenced = MessageHandler.substringUserID(userReferenced);
+
+			Member member = guild.getMemberById(userReferenced);
+
+			if (member == null) {
+				String unknown = settings.getProperty("messages.realname.unknown");
+				logSendMessage(event.getChannel(), unknown);
+				event.getChannel().sendMessage(unknown).queue();
+				return;
+			}
+
+			String username = storage.getUsername(userReferenced);
+			if (username == null) { 
+				String unknown = settings.getProperty("messages.realname.unknown");
+				logSendMessage(event.getChannel(), unknown);
+				event.getChannel().sendMessage(unknown).queue();
+				return;
+			}
+
+			String found = String.format(settings.getProperty("messages.realname.found"), 
+					member.getUser().getName(), username);
+			logSendMessage(event.getChannel(), found);
+			event.getChannel().sendMessage(found).queue();
 			return;
 		}
 
@@ -243,7 +288,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	@Override
 	public void run() {
 		try {
-			jda = new JDABuilder(AccountType.BOT).setToken(settings.getProperty("discord.token")).buildBlocking();
+			jda = new JDABuilder(AccountType.BOT)
+					.setToken(settings.getProperty("discord.token")).buildBlocking();
 		} catch (Exception e) {
 			System.out.println("Could not authenticate with Discord.");
 			return;
@@ -256,6 +302,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		jda.addEventListener(this);
 		jda.getPresence().setStatus(OnlineStatus.ONLINE);
 		jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
+
+		this.guild = jda.getGuildById(settings.getProperty("discord.guildId"));
 
 		scheduler.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, 5, TimeUnit.SECONDS);
 	}
@@ -283,7 +331,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			omittedMessage = omittedMessage.substring(0, 300) + "   [...]";
 		}
 
-		System.out.println("Filtered for inappropriate language: " + channel + " " + user + " " + omittedMessage);
+		System.out.println("Filtered for inappropriate language: " 
+							+ channel + " " + user + " " + omittedMessage);
 		messagesChecked++;
 	}
 

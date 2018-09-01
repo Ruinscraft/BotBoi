@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import com.ruinscraft.botboi.storage.TokenInfo;
 
-import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
@@ -25,7 +24,6 @@ public class HandleUnverifiedTask extends TimerTask {
 
 	private final BotBoiServer botBoiServer;
 
-	private final Guild guild;
 	private final GuildController guildController;
 
 	private Map<String, Role> permissions;
@@ -38,17 +36,16 @@ public class HandleUnverifiedTask extends TimerTask {
 		String guildId = botBoiServer.getSettings().getProperty("discord.guildId");
 
 		this.botBoiServer = botBoiServer;
-		this.guild = botBoiServer.getJDA().getGuildById(guildId);
-		this.guildController = new GuildController(guild);
+		this.guildController = new GuildController(botBoiServer.getGuild());
 		this.recentIDs = new HashSet<>();
-		this.memberRole = guild.getRoleById(botBoiServer.getSettings().getProperty("discord.memberRoleId"));
+		this.memberRole = botBoiServer.getGuild().getRoleById(botBoiServer.getSettings().getProperty("discord.memberRoleId"));
 
 		Map<String, Role> permissions = new HashMap<>();
 		String[] separatedPerms = botBoiServer.getSettings().getProperty("minecraft.permissions").split(";");
 		for (String separatedPerm : separatedPerms) {
 			String[] separatedPermAndRole = separatedPerm.split(",");
 			try {
-				permissions.put(separatedPermAndRole[0], guild.getRoleById(Long.valueOf(separatedPermAndRole[1])));
+				permissions.put(separatedPermAndRole[0], botBoiServer.getGuild().getRoleById(Long.valueOf(separatedPermAndRole[1])));
 			} catch (ArrayIndexOutOfBoundsException e) {
 				throw new ArrayIndexOutOfBoundsException("Permissions were formatted incorrectly! perm,id;perm,id");
 			} catch (Exception e) {
@@ -57,7 +54,7 @@ public class HandleUnverifiedTask extends TimerTask {
 		}
 		this.permissions = permissions;
 
-		System.out.println("Guild: " + guild.getName() + " ID: " + guildId);
+		System.out.println("Guild: " + botBoiServer.getGuild().getName() + " ID: " + guildId);
 	}
 
 	@Override
@@ -67,7 +64,7 @@ public class HandleUnverifiedTask extends TimerTask {
 
 			try {
 				User user = botBoiServer.getJDA().getUserById(tokenInfo.getDiscordId());
-				Member member = guild.getMember(user);
+				Member member = botBoiServer.getGuild().getMember(user);
 
 				String nickname = botBoiServer.getStorage().getUsername(tokenInfo.getUUID());
 
@@ -115,7 +112,7 @@ public class HandleUnverifiedTask extends TimerTask {
 
 		for (Entry<String, UUID> entry : botBoiServer.getStorage().getIDsWithUUIDs().entrySet()) {
 			if (recentIDs.contains(entry.getKey())) continue;
-			if (guild.getMemberById(entry.getKey()) == null) {
+			if (botBoiServer.getGuild().getMemberById(entry.getKey()) == null) {
 				botBoiServer.getStorage().deleteUser(entry.getKey());
 				continue;
 			}
@@ -124,7 +121,7 @@ public class HandleUnverifiedTask extends TimerTask {
 	}
 
 	private void updateMemberRoles(String memberID, UUID uuid) {
-		updateMemberRoles(guild.getMemberById(memberID), uuid);
+		updateMemberRoles(botBoiServer.getGuild().getMemberById(memberID), uuid);
 	}
 
 	private void updateMemberRoles(Member member, UUID uuid) {

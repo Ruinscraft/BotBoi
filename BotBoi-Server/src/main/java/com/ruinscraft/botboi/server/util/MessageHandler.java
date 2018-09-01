@@ -133,6 +133,10 @@ public class MessageHandler {
 		return getIndexOfNumber(username, check);
 	}
 
+	public static String substringUserID(String given) {
+		return given.replace("<", "").replace(">", "").replace("@", "").replace("!", "");
+	}
+
 	public static String replacePlaceholders(String message, MessageReceivedEvent event) {
 		Member member = event.getMember();
 		if (message.contains("{user}")) {

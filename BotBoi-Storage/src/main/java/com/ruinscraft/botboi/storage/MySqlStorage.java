@@ -26,6 +26,7 @@ public class MySqlStorage implements SqlStorage {
 	private String query_waiting;
 	private String query_token;
 	private String query_ids_and_uuids;
+	private String query_uuid_given_id;
 	private String delete_user;
 
 	private String luckperms_query_username;
@@ -44,6 +45,7 @@ public class MySqlStorage implements SqlStorage {
 		query_waiting = "SELECT token, discord_id, uuid FROM " + botboiTable + " WHERE waiting = 1 AND uuid IS NOT NULL;";
 		query_token = "SELECT * FROM " + botboiTable + " WHERE token = ?;";
 		query_ids_and_uuids = "SELECT discord_id, uuid FROM " + botboiTable + " WHERE uuid IS NOT NULL;";
+		query_uuid_given_id = "SELECT uuid FROM " + botboiTable + " WHERE discord_id = ?;";
 		delete_user = "DELETE FROM " + botboiTable + " WHERE discord_id = ?;";
 
 		luckperms_query_username = "SELECT username FROM " + luckPermsPlayerTable + " WHERE uuid = ?;";
@@ -224,6 +226,27 @@ public class MySqlStorage implements SqlStorage {
 		}
 
 		return null;
+	}
+
+	public String getUsername(String discord_id) {
+		String uuid = null;
+
+		try (Connection c = getConnection();
+				PreparedStatement query = c.prepareStatement(query_uuid_given_id)) {
+			query.setString(1, discord_id);
+
+			try (ResultSet rs = query.executeQuery()) {
+				while (rs.next()) {
+					uuid = rs.getString("uuid");
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		if (uuid == null) return uuid;
+
+		return getUsername(UUID.fromString(uuid));
 	}
 
 	@Override
