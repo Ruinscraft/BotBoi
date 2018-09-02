@@ -18,13 +18,11 @@ import com.ruinscraft.botboi.storage.TokenInfo;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.managers.GuildController;
 
 public class HandleUnverifiedTask extends TimerTask {
 
 	private final BotBoiServer botBoiServer;
 
-	private final GuildController guildController;
 	private Role memberRole;
 
 	private Map<String, Role> permissions;
@@ -34,7 +32,6 @@ public class HandleUnverifiedTask extends TimerTask {
 		String guildId = botBoiServer.getSettings().getProperty("discord.guildId");
 
 		this.botBoiServer = botBoiServer;
-		this.guildController = new GuildController(botBoiServer.getGuild());
 		this.memberRole = botBoiServer.getGuild().getRoleById(botBoiServer.getSettings().getProperty("discord.memberRoleId"));
 
 		Map<String, Role> permissions = new HashMap<>();
@@ -76,7 +73,7 @@ public class HandleUnverifiedTask extends TimerTask {
 					}
 				}, 17000L);
 
-				guildController.setNickname(member, nickname).queue();
+				botBoiServer.getGuildController().setNickname(member, nickname).queue();
 				updateMemberRoles(member, tokenInfo.getUUID());
 
 				user.openPrivateChannel().queue((channel) -> {
@@ -110,8 +107,8 @@ public class HandleUnverifiedTask extends TimerTask {
 
 		String latestUser = botBoiServer.getStorage().getUsername(uuid);
 		String current = member.getEffectiveName();
-		if (!latestUser.equals(current)) {
-			guildController.setNickname(member, latestUser);
+		if (!latestUser.toLowerCase().equals(current.toLowerCase())) {
+			botBoiServer.getGuildController().setNickname(member, latestUser);
 			botBoiServer.logUpdateName(current, latestUser);
 		}
 
@@ -176,7 +173,7 @@ public class HandleUnverifiedTask extends TimerTask {
 			botBoiServer.sendMessage(channel, roleAdded);
 		});
 
-		guildController.addRolesToMember(member, roles.toArray(new Role[0])).queue();
+		botBoiServer.getGuildController().addRolesToMember(member, roles.toArray(new Role[0])).queue();
 	}
 
 }

@@ -33,6 +33,7 @@ import net.dv8tion.jda.core.events.message.GenericMessageEvent;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.managers.GuildController;
 
 public class BotBoiServer extends ListenerAdapter implements Runnable {
 
@@ -43,6 +44,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	private JDA jda;
 	private Guild guild;
+	private GuildController guildController;
 	private final ScheduledExecutorService scheduler;
 
 	private static BotBoiServer instance;
@@ -137,6 +139,10 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return guild;
 	}
 
+	public GuildController getGuildController() {
+		return guildController;
+	}
+
 	public List<SearchWord> getSearchWords() {
 		String wordsTogether = settings.getProperty("sheet.searchwords");
 		List<SearchWord> searchWords = new ArrayList<>();
@@ -219,6 +225,16 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			return;
 		}
 
+		if (message.contains("!capitalize")) {
+			Member member = guild.getMember(event.getAuthor());
+			message = message.replace(" ", "").replace("!capitalize", "");
+			if (message.toLowerCase().equals(member.getEffectiveName().toLowerCase())) {
+				guildController.setNickname(member, message).queue();
+				this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized"));
+			}
+			return;
+		}
+
 		if (message.contains("!realname")) {
 			if (!message.contains("<") || !message.contains(">")) {
 				this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
@@ -287,6 +303,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
 
 		this.guild = jda.getGuildById(settings.getProperty("discord.guildId"));
+		this.guildController = new GuildController(guild);
 
 		scheduler.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, 5, TimeUnit.SECONDS);
 	}
