@@ -25,19 +25,16 @@ public class HandleUnverifiedTask extends TimerTask {
 	private final BotBoiServer botBoiServer;
 
 	private final GuildController guildController;
+	private Role memberRole;
 
 	private Map<String, Role> permissions;
-
 	private Collection<String> recentIDs;
-
-	private Role memberRole;
 
 	public HandleUnverifiedTask(BotBoiServer botBoiServer) {
 		String guildId = botBoiServer.getSettings().getProperty("discord.guildId");
 
 		this.botBoiServer = botBoiServer;
 		this.guildController = new GuildController(botBoiServer.getGuild());
-		this.recentIDs = new HashSet<>();
 		this.memberRole = botBoiServer.getGuild().getRoleById(botBoiServer.getSettings().getProperty("discord.memberRoleId"));
 
 		Map<String, Role> permissions = new HashMap<>();
@@ -54,6 +51,8 @@ public class HandleUnverifiedTask extends TimerTask {
 		}
 		this.permissions = permissions;
 
+		this.recentIDs = new HashSet<>();
+
 		System.out.println("Guild: " + botBoiServer.getGuild().getName() + " ID: " + guildId);
 	}
 
@@ -67,24 +66,6 @@ public class HandleUnverifiedTask extends TimerTask {
 				Member member = botBoiServer.getGuild().getMember(user);
 
 				String nickname = botBoiServer.getStorage().getUsername(tokenInfo.getUUID());
-
-				boolean done = false;
-				for (Role otherRole : member.getRoles()) {
-					if (otherRole.equals(memberRole)) {
-						String oldName = member.getEffectiveName();
-						guildController.setNickname(member, nickname).queue();
-
-						user.openPrivateChannel().queue((channel) -> {
-							String message = botBoiServer.getSettings()
-									.getProperty("messages.updatedname");
-							BotBoiServer.getInstance().logSendMessage(channel, message);
-							channel.sendMessage(message).queue();
-						});
-						BotBoiServer.getInstance().logUpdateName(oldName, nickname);
-						done = true;
-					}
-				}
-				if (done) continue;
 
 				if (recentIDs.contains(tokenInfo.getDiscordId())) continue;
 				recentIDs.add(tokenInfo.getDiscordId());
@@ -100,8 +81,7 @@ public class HandleUnverifiedTask extends TimerTask {
 
 				user.openPrivateChannel().queue((channel) -> {
 					String verified = botBoiServer.getSettings().getProperty("messages.verified");
-					BotBoiServer.getInstance().logSendMessage(channel, verified);
-					channel.sendMessage(verified).queue();
+					BotBoiServer.getInstance().sendMessage(channel, verified);
 				});
 				BotBoiServer.getInstance().logConfirmUser(member.getEffectiveName());
 			} catch (Exception e) {
@@ -127,6 +107,13 @@ public class HandleUnverifiedTask extends TimerTask {
 	private void updateMemberRoles(Member member, UUID uuid) {
 		Set<Role> roles = new HashSet<>();
 		roles.add(memberRole);
+
+		String latestUser = botBoiServer.getStorage().getUsername(uuid);
+		String current = member.getEffectiveName();
+		if (!latestUser.equals(current)) {
+			guildController.setNickname(member, latestUser);
+			botBoiServer.logUpdateName(current, latestUser);
+		}
 
 		for (Entry<String, Role> entry : this.permissions.entrySet()) {
 			String perm = entry.getKey();
@@ -186,8 +173,7 @@ public class HandleUnverifiedTask extends TimerTask {
 		member.getUser().openPrivateChannel().queue((channel) -> {
 			String roleAdded = String.format(
 					botBoiServer.getSettings().getProperty("messages.roleadded"), joinedRoleNameList);
-			botBoiServer.logSendMessage(channel, roleAdded);
-			channel.sendMessage(roleAdded).queue();
+			botBoiServer.sendMessage(channel, roleAdded);
 		});
 
 		guildController.addRolesToMember(member, roles.toArray(new Role[0])).queue();

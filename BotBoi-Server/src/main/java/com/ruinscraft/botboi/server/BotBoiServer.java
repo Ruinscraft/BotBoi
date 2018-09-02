@@ -175,8 +175,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		String welcomeMessage = String.format(settings.getProperty(message), token);
 
 		user.openPrivateChannel().queue((channel) -> {
-			logSendMessage(channel, welcomeMessage);
-			channel.sendMessage(welcomeMessage).queue();
+			this.sendMessage(channel, welcomeMessage);
 		});
 
 		storage.insertToken(token, user.getId());
@@ -203,8 +202,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 						String.format(settings.getProperty("webpurify.inappropriate"), 
 								message.getContentDisplay());
 				message.getAuthor().openPrivateChannel().queue((channel) -> {
-					logSendMessage(channel, inappropriate);
-					channel.sendMessage(inappropriate).queue();
+					this.sendMessage(channel, inappropriate);
 				});
 			} catch (Exception e) { }
 		}
@@ -221,18 +219,9 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			return;
 		}
 
-		if (message.contains("!updatename")) {
-			sendWelcomeMessage(event.getAuthor(), "messages.updatename");
-			return;
-		}
-
 		if (message.contains("!realname")) {
-			User user = event.getAuthor();
-
 			if (!message.contains("<") || !message.contains(">")) {
-				String unknown = settings.getProperty("messages.realname.unknown");
-				logSendMessage(event.getChannel(), unknown);
-				event.getChannel().sendMessage(unknown).queue();
+				this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
 				return;
 			}
 
@@ -242,24 +231,19 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			Member member = guild.getMemberById(userReferenced);
 
 			if (member == null) {
-				String unknown = settings.getProperty("messages.realname.unknown");
-				logSendMessage(event.getChannel(), unknown);
-				event.getChannel().sendMessage(unknown).queue();
+				this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
 				return;
 			}
 
 			String username = storage.getUsername(userReferenced);
 			if (username == null) { 
-				String unknown = settings.getProperty("messages.realname.unknown");
-				logSendMessage(event.getChannel(), unknown);
-				event.getChannel().sendMessage(unknown).queue();
+				this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
 				return;
 			}
 
 			String found = String.format(settings.getProperty("messages.realname.found"), 
 					member.getUser().getName(), username);
-			logSendMessage(event.getChannel(), found);
-			event.getChannel().sendMessage(found).queue();
+			this.sendMessage(event.getChannel(), found);
 			return;
 		}
 
@@ -276,8 +260,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 					channel.sendTyping().queue();
 					new Timer().schedule(new TimerTask() {
 						public void run() {
-							logSendMessage(channel, finalResponse);
-							channel.sendMessage(finalResponse).queue();
+							BotBoiServer.this.sendMessage(channel, finalResponse);
 						}
 					}, (int) ((finalResponse.length() * 75) * (1 + Math.random())));
 				}
@@ -336,7 +319,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		messagesChecked++;
 	}
 
-	public void logSendMessage(MessageChannel channel, String message) {
+	public void sendMessage(MessageChannel channel, String message) {
+		channel.sendMessage(message).queue();
 		String channelName = channel.getName();
 		if (channel.getType().equals(ChannelType.TEXT)) channelName = "#" + channelName;
 		if (channel.getType().equals(ChannelType.PRIVATE)) channelName = "@" + channelName;
