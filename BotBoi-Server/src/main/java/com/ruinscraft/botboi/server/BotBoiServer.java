@@ -3,6 +3,7 @@ package com.ruinscraft.botboi.server;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -224,6 +225,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			resolveInappropriateMessage(event);
 			return;
 		}
+		Objects.requireNonNull(message);
 
 		if (message.contains("!capitalize")) {
 			Member member = guild.getMember(event.getAuthor());
@@ -231,13 +233,39 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			if (message.toLowerCase().equals(member.getEffectiveName().toLowerCase())) {
 				guildController.setNickname(member, message).queue();
 				this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized"));
+			} else {
+				String username = storage.getUsername(member.getUser().getId());
+				if (message.toLowerCase().equals(username)) {
+					guildController.setNickname(member, message).queue();
+					this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized"));
+					return;
+				} else {
+					this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized.notsame"));
+				}
 			}
 			return;
 		}
 
 		if (message.contains("!realname")) {
 			if (!message.contains("<") || !message.contains(">")) {
-				this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
+				message = message.replace("!realname ", "");
+
+				List<Member> members = guild.getMembersByEffectiveName(message, true);
+				if (members.size() == 0) {
+					this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
+					return;
+				}
+
+				Member firstMember = members.get(0);
+				String username = storage.getUsername(firstMember.getUser().getId());
+				if (username == null) {
+					this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
+					return;
+				}
+
+				String found = String.format(settings.getProperty("messages.realname.found"), 
+						firstMember.getUser().getName(), username);
+				this.sendMessage(event.getChannel(), found);
 				return;
 			}
 

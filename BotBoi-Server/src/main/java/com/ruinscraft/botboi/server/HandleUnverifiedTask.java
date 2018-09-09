@@ -108,7 +108,7 @@ public class HandleUnverifiedTask extends TimerTask {
 		String latestUser = botBoiServer.getStorage().getUsername(uuid);
 		String current = member.getEffectiveName();
 		if (!latestUser.toLowerCase().equals(current.toLowerCase())) {
-			botBoiServer.getGuildController().setNickname(member, latestUser);
+			botBoiServer.getGuildController().setNickname(member, latestUser).queue();
 			botBoiServer.logUpdateName(current, latestUser);
 		}
 
