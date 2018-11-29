@@ -333,6 +333,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		this.guild = jda.getGuildById(settings.getProperty("discord.guildId"));
 		this.guildController = new GuildController(guild);
 
+		// handle temporary stuff here
+
 		scheduler.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, 5, TimeUnit.SECONDS);
 	}
 
