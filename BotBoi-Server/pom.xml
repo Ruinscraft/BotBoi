@@ -25,11 +25,17 @@
 	</repositories>
 
 	<dependencies>
+		<!-- https://mvnrepository.com/artifact/net.dv8tion/JDA -->
 		<dependency>
 			<groupId>net.dv8tion</groupId>
 			<artifactId>JDA</artifactId>
-			<version>3.8.1_447</version>
-			<scope>compile</scope>
+			<version>4.0.0_52</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.json/json -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20190722</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ruinscraft</groupId>

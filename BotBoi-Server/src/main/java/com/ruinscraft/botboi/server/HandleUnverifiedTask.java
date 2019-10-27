@@ -1,23 +1,14 @@
 package com.ruinscraft.botboi.server;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.ruinscraft.botboi.storage.TokenInfo;
 
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Role;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
 
 public class HandleUnverifiedTask extends TimerTask {
 
@@ -73,7 +64,7 @@ public class HandleUnverifiedTask extends TimerTask {
 					}
 				}, 17000L);
 
-				botBoiServer.getGuildController().setNickname(member, nickname).queue();
+				member.modifyNickname(nickname).queue();
 				updateMemberRoles(member, tokenInfo.getUUID());
 
 				user.openPrivateChannel().queue((channel) -> {
@@ -108,7 +99,7 @@ public class HandleUnverifiedTask extends TimerTask {
 		String latestUser = botBoiServer.getStorage().getUsername(uuid);
 		String current = member.getEffectiveName();
 		if (!latestUser.toLowerCase().equals(current.toLowerCase())) {
-			botBoiServer.getGuildController().setNickname(member, latestUser).queue();
+			member.modifyNickname(latestUser).queue();
 			botBoiServer.logUpdateName(current, latestUser);
 		}
 
@@ -172,8 +163,7 @@ public class HandleUnverifiedTask extends TimerTask {
 					botBoiServer.getSettings().getProperty("messages.roleadded"), joinedRoleNameList);
 			botBoiServer.sendMessage(channel, roleAdded);
 		});
-
-		botBoiServer.getGuildController().addRolesToMember(member, roles.toArray(new Role[0])).queue();
+		botBoiServer.getGuild().modifyMemberRoles(member, roles, null).queue();
 	}
 
 }

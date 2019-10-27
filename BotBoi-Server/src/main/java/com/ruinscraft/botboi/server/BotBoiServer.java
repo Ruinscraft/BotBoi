@@ -17,24 +17,17 @@ import com.ruinscraft.botboi.server.util.MessageHandler;
 import com.ruinscraft.botboi.storage.MySqlStorage;
 import com.ruinscraft.botboi.storage.Storage;
 
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.OnlineStatus;
-import net.dv8tion.jda.core.entities.ChannelType;
-import net.dv8tion.jda.core.entities.Game;
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.core.events.guild.member.GuildMemberLeaveEvent;
-import net.dv8tion.jda.core.events.message.GenericMessageEvent;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.events.message.MessageUpdateEvent;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.managers.GuildController;
+import net.dv8tion.jda.api.AccountType;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.message.GenericMessageEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class BotBoiServer extends ListenerAdapter implements Runnable {
 
@@ -45,7 +38,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 	private JDA jda;
 	private Guild guild;
-	private GuildController guildController;
 	private final ScheduledExecutorService scheduler;
 
 	private static BotBoiServer instance;
@@ -140,10 +132,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 		return guild;
 	}
 
-	public GuildController getGuildController() {
-		return guildController;
-	}
-
 	public List<SearchWord> getSearchWords() {
 		String wordsTogether = settings.getProperty("sheet.searchwords");
 		List<SearchWord> searchWords = new ArrayList<>();
@@ -198,7 +186,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	}
 
 	public void resolveInappropriateMessage(GenericMessageEvent event) {
-		Message message = event.getChannel().getMessageById(event.getMessageId())
+		Message message = event.getChannel().retrieveMessageById(event.getMessageId())
 				.complete();
 		logCheckMessage(message);
 
@@ -231,12 +219,12 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 			Member member = guild.getMember(event.getAuthor());
 			message = message.replace(" ", "").replace("!capitalize", "");
 			if (message.toLowerCase().equals(member.getEffectiveName().toLowerCase())) {
-				guildController.setNickname(member, message).queue();
+				member.modifyNickname(message).queue();
 				this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized"));
 			} else {
 				String username = storage.getUsername(member.getUser().getId());
 				if (message.toLowerCase().equals(username)) {
-					guildController.setNickname(member, message).queue();
+					member.modifyNickname(message).queue();
 					this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized"));
 					return;
 				} else {
@@ -316,7 +304,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 	public void run() {
 		try {
 			jda = new JDABuilder(AccountType.BOT)
-					.setToken(settings.getProperty("discord.token")).buildBlocking();
+					.setToken(settings.getProperty("discord.token")).build().awaitReady();
 		} catch (Exception e) {
 			System.out.println("Could not authenticate with Discord.");
 			return;
@@ -328,10 +316,9 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
 		jda.addEventListener(this);
 		jda.getPresence().setStatus(OnlineStatus.ONLINE);
-		jda.getPresence().setGame(Game.playing(settings.getProperty("messages.playing")));
+		jda.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing(settings.getProperty("messages.playing")));
 
 		this.guild = jda.getGuildById(settings.getProperty("discord.guildId"));
-		this.guildController = new GuildController(guild);
 
 		// handle temporary stuff here
 
