@@ -5,51 +5,49 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.ruinscraft.botboi.storage.TokenInfo;
-
 public interface Storage {
 
-	boolean isSetup();
+    boolean isSetup();
 
-	void insertToken(String token, String discordId);
+    void insertToken(String token, String discordId);
 
-	void setWaiting(String token, boolean waiting);
+    void setWaiting(String token, boolean waiting);
 
-	void setUsed(String token, boolean used);
+    void setUsed(String token, boolean used);
 
-	void setUUID(String token, UUID uuid);
+    void setUUID(String token, UUID uuid);
 
-	List<TokenInfo> getWaiting();
+    List<TokenInfo> getWaiting();
 
-	void deleteUser(String discordId);
+    void deleteUser(String discordId);
 
-	boolean isUsed(String token);
+    boolean isUsed(String token);
 
-	Map<String, UUID> getIDsWithUUIDs();
+    Map<String, UUID> getIDsWithUUIDs();
 
-	String getUsername(UUID uuid);
+    String getUsername(UUID uuid);
 
-	String getUsername(String discord_id);
+    String getUsername(String discord_id);
 
-	boolean hasPermission(UUID uuid, String permission);
+    boolean hasPermission(UUID uuid, String permission);
 
-	boolean groupHasPermission(String group, String permission);
+    boolean groupHasPermission(String group, String permission);
 
-	Collection<String> getPermissionsFromGroup(String group);
+    Collection<String> getPermissionsFromGroup(String group);
 
-	void close();
+    void close();
 
-	default boolean isWaiting(String token) {
-		for (TokenInfo tokenInfo : getWaiting()) {
-			if (tokenInfo.getToken().equals(token)) {
-				return true;
-			}
-		}
-		return false;
-	}
+    default boolean isWaiting(String token) {
+        for (TokenInfo tokenInfo : getWaiting()) {
+            if (tokenInfo.getToken().equals(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	default String generateToken() {
-		return UUID.randomUUID().toString().substring(0, 7);
-	}
+    default String generateToken() {
+        return UUID.randomUUID().toString().substring(0, 7);
+    }
 
 }
