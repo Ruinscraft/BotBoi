@@ -196,6 +196,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (senderIsSelf(event.getAuthor())) return;
+        if (event == null || event.getTextChannel() == null) return;
         String message = event.getMessage().getContentRaw();
 
         if (event.getGuild() != null &&
@@ -269,7 +270,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
             return;
         }
 
-        if (message.contains("<@453668483528523776>")) {
+        if (message.contains("<@453668483528523776>") || message.contains("<@!453668483528523776>")) {
             if (event.getGuild() == null) return;
             String response = MessageHandler.getMessage(message);
             response = MessageHandler.replacePlaceholders(response, event);

@@ -78,24 +78,20 @@ public class MessageHandler {
     }
 
     public static String getBestName(String username) {
-        int cutOff = getIndexOfNumber(username.toLowerCase(), username.length());
-        if (cutOff != -1) {
-            username = username.substring(0, cutOff);
-        }
-        if (username.length() < 8 || username.length() > 30) {
+        if (username.length() < 6 || username.length() > 16) {
             return username;
         }
+        username = username.replaceAll("[0-9]", " ");
         Map<String, Integer> names = BotBoiServer.getInstance().getNames();
         String lowerCaseUsername = username.toLowerCase();
         String bestName = null;
+        int bestFrequency = 0;
         for (Entry<String, Integer> entry : names.entrySet()) {
             String name = entry.getKey();
             if (lowerCaseUsername.contains(name.toLowerCase())) {
-                if (bestName == null) {
-                    bestName = name;
-                    continue;
-                }
                 int frequency = entry.getValue();
+
+                // check if first letter is capitalized
                 String originalName = username.substring(
                         lowerCaseUsername.indexOf(name.toLowerCase()),
                         lowerCaseUsername.indexOf(name.toLowerCase()) + name.length());
@@ -103,28 +99,40 @@ public class MessageHandler {
                         .equals(originalName.substring(0, 1).toLowerCase())) {
                     frequency = frequency * 5;
                 }
-                if (frequency > names.get(bestName)) {
+                if (frequency > 5) {
+                	System.out.println(name + " " + frequency);
+                }
+                if (bestName == null) {
                     bestName = name;
+                    bestFrequency = frequency;
+                    continue;
+                }
+                if (frequency > bestFrequency) {
+                    bestName = name;
+                    bestFrequency = frequency;
                 }
             }
         }
         if (bestName == null) {
             return username;
         }
-        return bestName;
-    }
-
-    public static int getIndexOfNumber(String username, int check) {
-        check--;
-        try {
-            Integer.valueOf(username.substring(check, check + 1));
-        } catch (NumberFormatException e) {
-            if (check + 1 == username.length()) {
-                return -1;
+        if (bestFrequency < 250) {
+        	if (username.contains(" ")) {
+                username = username.substring(0, username.indexOf(" ")).replace(" ", "");
+                username = username.substring(0, 1).toUpperCase() + username.substring(1, username.length() - 1);
+                username = username.replaceAll("([A-Z])", " ");
+                if (username.contains(" ")) {
+                    username = username.substring(0, username.indexOf(" "));
+                }
+                return username;
             }
-            return check + 1;
+            username = username.substring(0, 1) + username.substring(1, username.length()).replaceAll("([A-Z])", " ");
+            if (username.contains(" ")) {
+                username = username.substring(0, username.indexOf(" "));
+            }
+            return username;
         }
-        return getIndexOfNumber(username, check);
+        return bestName;
     }
 
     public static String substringUserID(String given) {

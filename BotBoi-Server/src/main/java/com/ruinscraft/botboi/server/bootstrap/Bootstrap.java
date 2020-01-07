@@ -86,7 +86,7 @@ public class Bootstrap {
             } catch (NumberFormatException e) {
                 e.printStackTrace();
             }
-            frequencyInt = (int) Math.pow(frequencyInt, name.length());
+            frequencyInt = (int) Math.pow(frequencyInt, 1 + (name.length() / 4));
             names.put(name, frequencyInt);
         }
         return names;
