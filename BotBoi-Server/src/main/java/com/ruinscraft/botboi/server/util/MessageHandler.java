@@ -116,7 +116,7 @@ public class MessageHandler {
         if (bestName == null) {
             return username;
         }
-        if (bestFrequency < 250) {
+        if (bestFrequency < 400) {
         	if (username.contains(" ")) {
                 username = username.substring(0, username.indexOf(" ")).replace(" ", "");
                 username = username.substring(0, 1).toUpperCase() + username.substring(1, username.length() - 1);
