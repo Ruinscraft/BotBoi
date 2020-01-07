@@ -78,7 +78,7 @@ public class MessageHandler {
     }
 
     public static String getBestName(String username) {
-        if (username.length() < 6 || username.length() > 16) {
+        if (username.length() < 6) {
             return username;
         }
         username = username.replaceAll("[0-9]", " ");
@@ -113,24 +113,39 @@ public class MessageHandler {
                 }
             }
         }
-        if (bestName == null) {
-            return username;
-        }
-        if (bestFrequency < 400) {
+        // bunch of junk
+        if (bestFrequency < 400 || bestName == null) {
+        	if (username.substring(0, 3).contains(" ")) {
+        		return username.substring(0, 1).toUpperCase() + 
+                        username.substring(1, username.length()).toLowerCase().replace("_", " ").replace(" ", "");
+        	}
         	if (username.contains(" ")) {
                 username = username.substring(0, username.indexOf(" ")).replace(" ", "");
-                username = username.substring(0, 1).toUpperCase() + username.substring(1, username.length() - 1);
-                username = username.replaceAll("([A-Z])", " ");
+                username = username.substring(0, 1).toUpperCase() + username.substring(1, username.length());
+                if (username.replaceAll("[A-Z]", "").length() < username.length() * 3 / 4) {
+                    username = username.substring(0, 1) + 
+                            username.substring(1, username.length()).toLowerCase();
+                } else {
+                    username = username.substring(0, 1) + 
+                            username.substring(1, username.length()).replaceAll("[A-Z]", " ");
+                }
                 if (username.contains(" ")) {
                     username = username.substring(0, username.indexOf(" "));
                 }
-                return username;
+                return username.replace(" ", "");
             }
-            username = username.substring(0, 1) + username.substring(1, username.length()).replaceAll("([A-Z])", " ");
-            if (username.contains(" ")) {
+        	if (username.replaceAll("[A-Z]", "").length() < username.length() * 3 / 4) {
+                username = username.substring(0, 1).toUpperCase() + 
+                            username.substring(1, username.length()).toLowerCase().replace("_", " ");
+            } else {
+                username = username.replace("_", "").substring(0, 1).toUpperCase() + 
+                        username.substring(1, username.length()).replaceAll("[A-Z]", " ").replace("_", " ");
+            }
+            if (username.contains(" ") && username.indexOf(" ") > 3) {
                 username = username.substring(0, username.indexOf(" "));
             }
-            return username;
+
+            return username.replace(" ", "");
         }
         return bestName;
     }

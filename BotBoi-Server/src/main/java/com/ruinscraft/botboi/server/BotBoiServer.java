@@ -225,6 +225,13 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
             return;
         }
 
+        if (message.contains("!guessname")) {
+            message = message.replace("!guessname ", "");
+            if (message.contains(" ") || message.contains("!guessname")) return;
+            this.sendMessage(event.getChannel(), MessageHandler.getBestName(message));
+            return;
+        }
+
         if (message.contains("!realname")) {
             if (!message.contains("<") || !message.contains(">")) {
                 message = message.replace("!realname ", "");
