@@ -196,7 +196,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (senderIsSelf(event.getAuthor())) return;
-        if (event == null || event.getTextChannel() == null) return;
+        if (event == null || event.getChannelType() != ChannelType.TEXT) return;
         String message = event.getMessage().getContentRaw();
 
         if (event.getGuild() != null &&
