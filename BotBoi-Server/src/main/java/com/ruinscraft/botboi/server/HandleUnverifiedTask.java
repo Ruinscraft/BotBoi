@@ -45,7 +45,6 @@ public class HandleUnverifiedTask extends TimerTask {
 
     @Override
     public void run() {
-    	System.out.println("Searching!");
         for (TokenInfo tokenInfo : botBoiServer.getStorage().getWaiting()) {
         	System.out.println("Found " + tokenInfo.getUUID());
             botBoiServer.getStorage().setWaiting(tokenInfo.getToken(), false);
