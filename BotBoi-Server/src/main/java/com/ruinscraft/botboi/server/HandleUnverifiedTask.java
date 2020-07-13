@@ -45,7 +45,9 @@ public class HandleUnverifiedTask extends TimerTask {
 
     @Override
     public void run() {
+    	System.out.println("Searching!");
         for (TokenInfo tokenInfo : botBoiServer.getStorage().getWaiting()) {
+        	System.out.println("Found " + tokenInfo.getUUID());
             botBoiServer.getStorage().setWaiting(tokenInfo.getToken(), false);
 
             try {
@@ -92,7 +94,7 @@ public class HandleUnverifiedTask extends TimerTask {
     }
 
     private void updateMemberRoles(Member member, UUID uuid) {
-        Set<Role> roles = new HashSet<>();
+        List<Role> roles = new ArrayList<>();
         roles.add(memberRole);
 
         String latestUser = botBoiServer.getStorage().getUsername(uuid);
@@ -106,7 +108,14 @@ public class HandleUnverifiedTask extends TimerTask {
             String perm = entry.getKey();
             Role role = entry.getValue();
 
-            if (!botBoiServer.getStorage().hasPermission(uuid, perm)) continue;
+            if (!botBoiServer.getStorage().hasPermission(uuid, perm)) {
+                if (member.getRoles().contains(role)) {
+                    Collection removeRoles = new ArrayList<>();
+                    removeRoles.add(role);
+                    member.getGuild().modifyMemberRoles(member, null, removeRoles);
+                }
+                continue;
+            }
 
             roles.add(role);
 
@@ -139,23 +148,19 @@ public class HandleUnverifiedTask extends TimerTask {
             }
         }
 
-        if (roles.isEmpty()) return;
-
-        List<String> roleNames = roles.stream().map(Role::getName).collect(Collectors.toList());
-
-        List<String> updatedRoleNames = member.getRoles().stream().map(Role::getName).collect(Collectors.toList());
-        for (int i = 0; i < roleNames.size(); i++) {
-            String role = roleNames.get(i);
-            for (String otherRole : updatedRoleNames) {
-                if (role.equals(otherRole)) {
-                    roleNames.remove(role);
+        for (int i = 0; i < roles.size(); i++) {
+            Role role = roles.get(i);
+            for (Role otherRole : member.getRoles()) {
+                if (role.getId().equals(otherRole.getId())) {
+                    roles.remove(role);
                     i--;
                     break;
                 }
             }
         }
-        if (roleNames.isEmpty()) return;
-        String joinedRoleNameList = String.join(", ", roleNames);
+        if (roles.isEmpty()) return;
+
+        String joinedRoleNameList = String.join(", ", roles.stream().map(Role::getName).collect(Collectors.toList()));
 
         member.getUser().openPrivateChannel().queue((channel) -> {
             String roleAdded = String.format(

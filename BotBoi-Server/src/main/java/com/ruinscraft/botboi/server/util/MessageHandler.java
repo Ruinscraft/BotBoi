@@ -99,6 +99,15 @@ public class MessageHandler {
                         .equals(originalName.substring(0, 1).toLowerCase())) {
                     frequency = frequency * 5;
                 }
+                if (username.endsWith(originalName)) {
+                	frequency = frequency * 10;
+                } else {
+                	String character = username.substring(username.indexOf(originalName) + originalName.length(), 
+            				username.indexOf(originalName) + originalName.length() + 1);
+                	if (character.toUpperCase().equals(character)) {
+                		frequency = frequency * 10;
+                	}
+                }
                 if (frequency > 5) {
                 	System.out.println(name + " " + frequency);
                 }
