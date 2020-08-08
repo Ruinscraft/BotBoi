@@ -3,15 +3,11 @@ package com.ruinscraft.botboi.server;
 import com.ruinscraft.botboi.server.util.FilterUtils;
 import com.ruinscraft.botboi.server.util.LoggerPrintStream;
 import com.ruinscraft.botboi.server.util.MessageHandler;
-import com.ruinscraft.botboi.storage.MySqlStorage;
-import com.ruinscraft.botboi.storage.Storage;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.message.GenericMessageEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
@@ -20,14 +16,12 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class BotBoiServer extends ListenerAdapter implements Runnable {
 
     private static BotBoiServer instance;
     private final ScheduledExecutorService scheduler;
     private Properties settings;
-    private Storage storage;
     private Map<String, Integer> names;
     private JDA jda;
     private Guild guild;
@@ -47,18 +41,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
         this.settings = settings;
         this.names = names;
 
-        this.storage = new MySqlStorage(
-                settings.getProperty("storage.mysql.host"),
-                Integer.parseInt(settings.getProperty("storage.mysql.port")),
-                settings.getProperty("storage.mysql.database"),
-                settings.getProperty("storage.mysql.username"),
-                settings.getProperty("storage.mysql.password"),
-                settings.getProperty("storage.mysql.table"),
-                settings.getProperty("storage.mysql.luckperms.database"),
-                settings.getProperty("storage.mysql.luckperms.playertable"),
-                settings.getProperty("storage.mysql.luckperms.permtable"),
-                settings.getProperty("storage.mysql.luckperms.grouppermtable"));
-
         MessageHandler.loadEntries(getSearchWords());
     }
 
@@ -70,7 +52,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
         System.out.println("Shutting down...");
 
         try {
-            storage.close();
             jda.shutdown();
         } catch (Exception e) {
             e.printStackTrace();
@@ -105,10 +86,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
         return settings;
     }
 
-    public Storage getStorage() {
-        return storage;
-    }
-
     public Map<String, Integer> getNames() {
         return names;
     }
@@ -141,28 +118,6 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
 
     public boolean senderIsSelf(User user) {
         return user.getId().equals(jda.getSelfUser().getId());
-    }
-
-    @Override
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        sendWelcomeMessage(event.getUser(), "messages.welcome");
-    }
-
-    @Override
-    public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
-        getStorage().deleteUser(event.getUser().getId());
-    }
-
-    public void sendWelcomeMessage(User user, String message) {
-        String token = storage.generateToken();
-
-        String welcomeMessage = String.format(settings.getProperty(message), token);
-
-        user.openPrivateChannel().queue((channel) -> {
-            this.sendMessage(channel, welcomeMessage);
-        });
-
-        storage.insertToken(token, user.getId());
     }
 
     @Override
@@ -206,74 +161,10 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
         }
         Objects.requireNonNull(message);
 
-        if (message.contains("!capitalize")) {
-            Member member = guild.getMember(event.getAuthor());
-            message = message.replace(" ", "").replace("!capitalize", "");
-            if (message.toLowerCase().equals(member.getEffectiveName().toLowerCase())) {
-                member.modifyNickname(message).queue();
-                this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized"));
-            } else {
-                String username = storage.getUsername(member.getUser().getId());
-                if (message.toLowerCase().equals(username)) {
-                    member.modifyNickname(message).queue();
-                    this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized"));
-                    return;
-                } else {
-                    this.sendMessage(event.getChannel(), settings.getProperty("messages.capitalized.notsame"));
-                }
-            }
-            return;
-        }
-
         if (message.contains("!guessname")) {
             message = message.replace("!guessname ", "");
             if (message.contains(" ") || message.contains("!guessname")) return;
             this.sendMessage(event.getChannel(), MessageHandler.getBestName(message));
-            return;
-        }
-
-        if (message.contains("!realname")) {
-            if (!message.contains("<") || !message.contains(">")) {
-                message = message.replace("!realname ", "");
-
-                List<Member> members = guild.getMembersByEffectiveName(message, true);
-                if (members.size() == 0) {
-                    this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
-                    return;
-                }
-
-                Member firstMember = members.get(0);
-                String username = storage.getUsername(firstMember.getUser().getId());
-                if (username == null) {
-                    this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
-                    return;
-                }
-
-                String found = String.format(settings.getProperty("messages.realname.found"),
-                        firstMember.getUser().getName(), username);
-                this.sendMessage(event.getChannel(), found);
-                return;
-            }
-
-            String userReferenced = message.substring(message.indexOf("<"), message.indexOf(">"));
-            userReferenced = MessageHandler.substringUserID(userReferenced);
-
-            Member member = guild.getMemberById(userReferenced);
-
-            if (member == null) {
-                this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
-                return;
-            }
-
-            String username = storage.getUsername(userReferenced);
-            if (username == null) {
-                this.sendMessage(event.getChannel(), settings.getProperty("messages.realname.unknown"));
-                return;
-            }
-
-            String found = String.format(settings.getProperty("messages.realname.found"),
-                    member.getUser().getName(), username);
-            this.sendMessage(event.getChannel(), found);
             return;
         }
 
@@ -308,19 +199,11 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
             return;
         }
 
-        if (!storage.isSetup()) {
-            return;
-        }
-
         jda.addEventListener(this);
         jda.getPresence().setStatus(OnlineStatus.ONLINE);
         jda.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing(settings.getProperty("messages.playing")));
 
         this.guild = jda.getGuildById(settings.getProperty("discord.guildId"));
-
-        // handle temporary stuff here
-
-        scheduler.scheduleAtFixedRate(new HandleUnverifiedTask(this), 0, 5, TimeUnit.SECONDS);
     }
 
     public void logConfirmUser(String user) {

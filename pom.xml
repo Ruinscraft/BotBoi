@@ -15,9 +15,7 @@
     </properties>
 
     <modules>
-        <module>BotBoi-Plugin</module>
         <module>BotBoi-Server</module>
-        <module>BotBoi-Storage</module>
     </modules>
 
     <build>
