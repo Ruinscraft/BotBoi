@@ -18,6 +18,7 @@ public final class FilterUtils {
         replacements.put('$', 's');
         replacements.put('3', 'e');
         replacements.put('1', 'i');
+        replacements.put('!', 'i');
         replacements.put('|', 'i');
 
         // single letter words
