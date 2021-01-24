@@ -15,7 +15,7 @@
         <repository>
             <id>jcenter</id>
             <name>jcenter-bintray</name>
-            <url>http://jcenter.bintray.com</url>
+            <url>https://jcenter.bintray.com</url>
         </repository>
         <repository>
             <id>maven-central</id>
@@ -29,7 +29,7 @@
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
             <!-- Use 'stable' version from GitHub releases page -->
-            <version>4.0.0_39</version>
+            <version>4.2.0_222</version>
             <scope>compile</scope>
         </dependency>
         <!-- Used for Webpurify filter responses. Should really change to Gson... -->

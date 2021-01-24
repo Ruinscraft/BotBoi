@@ -1,34 +1,67 @@
 package com.ruinscraft.botboi.server.util;
 
-import com.google.common.base.CharMatcher;
-import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-// TODO: redo this mess...
-public class FilterUtils {
+public final class FilterUtils {
 
-    public static boolean isASCII(String string) {
-        return CharMatcher.ASCII.matchesAllOf(string);
+    private static Map<Character, Character> replacements;
+    private static List<Character> singleLetterWords;
+
+    static {
+        // replacements
+        replacements = new HashMap<>();
+
+        replacements.put('@', 'a');
+        replacements.put('$', 's');
+        replacements.put('3', 'e');
+        replacements.put('1', 'i');
+        replacements.put('|', 'i');
+
+        // single letter words
+        singleLetterWords = new ArrayList<>();
+
+        singleLetterWords.add('a');
+        singleLetterWords.add('i');
     }
 
-    public static boolean isAppropriate(String string, String webpurifyApiKey) {
-        try {
-            if (string.isEmpty()) {
+    public static boolean isBadMessage(List<String> badWords, String msg) {
+        msg = msg.toLowerCase();
+
+        boolean flag = false;
+
+        String[] split = msg.split(" ");
+
+        for (int i = 0; i < split.length; i++) {
+            if (split[i].length() == 1
+                    && !singleLetterWords.contains(split[i].charAt(0))) {
+                flag = true;
+            }
+
+            if (badWords.contains(split[i])) {
                 return true;
             }
-            if (!NetUtils.isOpen("api1.webpurify.com")) {
-                return true;
-            }
-            String url = NetUtils.generateWebPurifyUrl(string, webpurifyApiKey);
-            String response = NetUtils.getResponse(url);
-            JSONObject json = new JSONObject(response).getJSONObject("rsp");
-            if (json.getInt("found") > 0) {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
-            System.out.println("Error contacting webpurify.");
         }
-        return true;
+
+        if (flag) {
+            String combined = msg.replace(" ", "");
+            for (String badWord : badWords) {
+                if (combined.contains(badWord)) {
+                    return true;
+                }
+            }
+        }
+
+        // recursive check for replacements
+        for (char c : replacements.keySet()) {
+            if (msg.contains(Character.toString(c))) {
+                return isBadMessage(badWords, msg.replace(c, replacements.get(c)));
+            }
+        }
+
+        return false;
     }
 
 }

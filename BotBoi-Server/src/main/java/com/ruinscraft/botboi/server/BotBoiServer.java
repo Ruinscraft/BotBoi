@@ -10,12 +10,16 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.message.GenericMessageEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
+import net.dv8tion.jda.api.exceptions.ContextException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -29,6 +33,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
     private Properties settings;
     private Storage storage;
     private Map<String, Integer> names;
+    private List<String> badWords;
     private JDA jda;
     private Guild guild;
     private long startTime = System.currentTimeMillis();
@@ -60,6 +65,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
                 settings.getProperty("storage.mysql.luckperms.grouppermtable"));
 
         MessageHandler.loadEntries(getSearchWords());
+
+        badWords = Arrays.asList(settings.getProperty("messages.badwords").split(","));
     }
 
     public static BotBoiServer getInstance() {
@@ -149,7 +156,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
     }
 
     @Override
-    public void onGuildMemberLeave(GuildMemberLeaveEvent event) {
+    public void onGuildMemberRemove(GuildMemberRemoveEvent event) {
         getStorage().deleteUser(event.getUser().getId());
     }
 
@@ -168,8 +175,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
     @Override
     public void onMessageUpdate(MessageUpdateEvent event) {
         if (senderIsSelf(event.getAuthor())) return;
-        if (!FilterUtils.isAppropriate(event.getMessage().getContentRaw(),
-                settings.getProperty("webpurify.key"))) {
+        if (FilterUtils.isBadMessage(this.badWords, event.getMessage().getContentRaw())) {
             resolveInappropriateMessage(event);
         }
     }
@@ -183,7 +189,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
             try {
                 event.getChannel().deleteMessageById(event.getMessageId()).queue();
                 String inappropriate =
-                        String.format(settings.getProperty("webpurify.inappropriate"),
+                        String.format(settings.getProperty("messages.inappropriate"),
                                 message.getContentDisplay());
                 message.getAuthor().openPrivateChannel().queue((channel) -> {
                     this.sendMessage(channel, inappropriate);
@@ -200,7 +206,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
         String message = event.getMessage().getContentRaw();
 
         if (event.getGuild() != null &&
-                !FilterUtils.isAppropriate(message, settings.getProperty("webpurify.key"))) {
+                FilterUtils.isBadMessage(this.badWords, message)) {
             resolveInappropriateMessage(event);
             return;
         }
@@ -301,6 +307,8 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
     @Override
     public void run() {
         try {
+            jda = JDABuilder.createDefault(settings.getProperty("discord.token"))
+                    .enableIntents(GatewayIntent.GUILD_MEMBERS).build().awaitReady();
             jda = new JDABuilder(AccountType.BOT)
                     .setToken(settings.getProperty("discord.token")).build().awaitReady();
         } catch (Exception e) {
@@ -311,6 +319,7 @@ public class BotBoiServer extends ListenerAdapter implements Runnable {
         if (!storage.isSetup()) {
             return;
         }
+
 
         jda.addEventListener(this);
         jda.getPresence().setStatus(OnlineStatus.ONLINE);
